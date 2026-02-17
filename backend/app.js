@@ -34,6 +34,10 @@ app.use('/invoices', invoiceRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/technician-jobs', technicianJobsRoutes);
 
+app.use('/api/health', (req, res) => {
+    res.json({ message: 'OK' });
+});
+
 app.use(errorHandler);
 
 module.exports = app;

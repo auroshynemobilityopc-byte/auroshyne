@@ -5,10 +5,20 @@ const PDFDocument = require('pdfkit');
 const Booking = require('../bookings/booking.model');
 const { AppError } = require('../../common/utils/appError');
 
-const TEMP_DIR = path.join(__dirname, '../../../temp/invoices');
+// Use /tmp in serverless environments (AWS Lambda), local temp dir otherwise
+const isServerless = __dirname.startsWith('/var/task');
+const TEMP_DIR = isServerless
+    ? '/tmp/invoices'
+    : path.join(__dirname, '../../../temp/invoices');
 
-if (!fs.existsSync(TEMP_DIR)) {
-    fs.mkdirSync(TEMP_DIR, { recursive: true });
+// Ensure directory exists
+try {
+    if (!fs.existsSync(TEMP_DIR)) {
+        fs.mkdirSync(TEMP_DIR, { recursive: true });
+    }
+} catch (error) {
+    console.error('Failed to create invoices directory:', error);
+    // Directory will be created on-demand during invoice generation if needed
 }
 
 exports.generateInvoice = async (bookingId) => {
@@ -65,6 +75,11 @@ exports.generateInvoice = async (bookingId) => {
      */
     const fileName = `invoice-${booking.bookingId}.pdf`;
     const filePath = path.join(TEMP_DIR, fileName);
+
+    // Ensure directory exists before writing
+    if (!fs.existsSync(TEMP_DIR)) {
+        fs.mkdirSync(TEMP_DIR, { recursive: true });
+    }
 
     const doc = new PDFDocument({ margin: 50 });
     const stream = fs.createWriteStream(filePath);
