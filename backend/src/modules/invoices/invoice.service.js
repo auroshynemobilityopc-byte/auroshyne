@@ -6,20 +6,15 @@ const Booking = require('../bookings/booking.model');
 const { AppError } = require('../../common/utils/appError');
 
 // Use /tmp in serverless environments (AWS Lambda), local temp dir otherwise
-const isServerless = __dirname.startsWith('/var/task');
-const TEMP_DIR = isServerless
-    ? '/tmp/invoices'
-    : path.join(__dirname, '../../../temp/invoices');
-
 // Ensure directory exists
-try {
-    if (!fs.existsSync(TEMP_DIR)) {
-        fs.mkdirSync(TEMP_DIR, { recursive: true });
-    }
-} catch (error) {
-    console.error('Failed to create invoices directory:', error);
-    // Directory will be created on-demand during invoice generation if needed
-}
+// try {
+//     if (!fs.existsSync(TEMP_DIR)) {
+//         fs.mkdirSync(TEMP_DIR, { recursive: true });
+//     }
+// } catch (error) {
+//     console.error('Failed to create invoices directory:', error);
+//     // Directory will be created on-demand during invoice generation if needed
+// }
 
 exports.generateInvoice = async (bookingId) => {
     const booking = await Booking.findOne({ bookingId })
