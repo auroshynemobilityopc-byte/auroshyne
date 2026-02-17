@@ -21,7 +21,8 @@ const seedSuperAdmin = async () => {
             process.exit(0);
         }
 
-        const hashedPassword = await bcrypt.hash('Admin@123', 10);
+        // Admin@123
+        const hashedPassword = '$2b$10$4i7SF.aboGfPzlRh8uI.SOHrXZgv7oOEp1n47Y2kECY3yqzDN668.';
 
         await User.create({
             name: 'Super Admin',
