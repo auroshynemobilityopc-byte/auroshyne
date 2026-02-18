@@ -15,6 +15,7 @@ const errorHandler = require('./src/common/middleware/error.middleware');
 const { globalLimiter } = require('./src/common/middleware/rateLimit.middleware');
 const setupSwagger = require('./src/config/swagger');
 const cors = require('./src/config/cors');
+const mongoose = require('mongoose');
 
 setupSwagger(app);
 
@@ -34,8 +35,42 @@ app.use('/invoices', invoiceRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/technician-jobs', technicianJobsRoutes);
 
-app.use('/api/health', (req, res) => {
-    res.json({ message: 'OK' });
+app.use('/api/health', async (req, res) => {
+    const healthcheck = {
+        uptime: process.uptime(),
+        timestamp: new Date().toISOString(),
+        status: 'OK',
+        services: {
+            api: 'UP',
+            database: 'UNKNOWN',
+        },
+    };
+
+    try {
+        /**
+         * 🗄️ DATABASE CHECK
+         */
+        const dbState = mongoose.connection.readyState;
+
+        // 0 = disconnected
+        // 1 = connected
+        // 2 = connecting
+        // 3 = disconnecting
+
+        if (dbState === 1) {
+            healthcheck.services.database = 'UP';
+        } else {
+            healthcheck.services.database = 'DOWN';
+            healthcheck.status = 'DEGRADED';
+        }
+
+        return res.status(200).json(healthcheck);
+    } catch (err) {
+        healthcheck.status = 'DOWN';
+        healthcheck.services.database = 'DOWN';
+
+        return res.status(503).json(healthcheck);
+    }
 });
 
 app.use(errorHandler);
