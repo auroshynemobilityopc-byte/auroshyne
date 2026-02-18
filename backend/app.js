@@ -1,5 +1,6 @@
 const express = require('express');
 const app = express();
+const mongoose = require('mongoose');
 
 const authRoutes = require('./src/modules/auth/auth.routes');
 const userRoutes = require('./src/modules/users/user.routes');
@@ -11,30 +12,25 @@ const paymentRoutes = require('./src/modules/payments/payment.routes');
 const invoiceRoutes = require('./src/modules/invoices/invoice.routes');
 const dashboardRoutes = require('./src/modules/dashboard/dashboard.routes');
 const technicianJobsRoutes = require('./src/modules/technicians/jobs/technicianJobs.routes');
+
 const errorHandler = require('./src/common/middleware/error.middleware');
 const { globalLimiter } = require('./src/common/middleware/rateLimit.middleware');
 const setupSwagger = require('./src/config/swagger');
 const cors = require('./src/config/cors');
-const mongoose = require('mongoose');
+
+/**
+ * ✅ TRUST PROXY (for rate limit behind proxy)
+ */
+app.set('trust proxy', 1);
 
 setupSwagger(app);
 
 app.use(cors);
 app.use(express.json());
 
-app.use(globalLimiter);
-
-app.use('/auth', authRoutes);
-app.use('/users', userRoutes);
-app.use('/technicians', technicianRoutes);
-app.use('/services', serviceRoutes);
-app.use('/addons', addonRoutes);
-app.use('/bookings', bookingRoutes);
-app.use('/payments', paymentRoutes);
-app.use('/invoices', invoiceRoutes);
-app.use('/dashboard', dashboardRoutes);
-app.use('/technician-jobs', technicianJobsRoutes);
-
+/**
+ * 🩺 HEALTH CHECK (no rate limit)
+ */
 app.use('/api/health', async (req, res) => {
     const healthcheck = {
         uptime: process.uptime(),
@@ -47,15 +43,7 @@ app.use('/api/health', async (req, res) => {
     };
 
     try {
-        /**
-         * 🗄️ DATABASE CHECK
-         */
         const dbState = mongoose.connection.readyState;
-
-        // 0 = disconnected
-        // 1 = connected
-        // 2 = connecting
-        // 3 = disconnecting
 
         if (dbState === 1) {
             healthcheck.services.database = 'UP';
@@ -72,6 +60,25 @@ app.use('/api/health', async (req, res) => {
         return res.status(503).json(healthcheck);
     }
 });
+
+/**
+ * 🔒 RATE LIMIT
+ */
+app.use(globalLimiter);
+
+/**
+ * 🧩 ROUTES
+ */
+app.use('/auth', authRoutes);
+app.use('/users', userRoutes);
+app.use('/technicians', technicianRoutes);
+app.use('/services', serviceRoutes);
+app.use('/addons', addonRoutes);
+app.use('/bookings', bookingRoutes);
+app.use('/payments', paymentRoutes);
+app.use('/invoices', invoiceRoutes);
+app.use('/dashboard', dashboardRoutes);
+app.use('/technician-jobs', technicianJobsRoutes);
 
 app.use(errorHandler);
 
