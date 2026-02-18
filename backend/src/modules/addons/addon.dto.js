@@ -9,6 +9,7 @@ exports.createAddonDTO = Joi.object({
 exports.updateAddonDTO = Joi.object({
     name: Joi.string().trim(),
     price: Joi.number().min(0),
+    vehicleType: Joi.string().valid('2W', '4W', 'CAB'),
     isActive: Joi.boolean(),
 });
 
