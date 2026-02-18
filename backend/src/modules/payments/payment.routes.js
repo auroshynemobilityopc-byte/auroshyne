@@ -11,30 +11,6 @@ const { ADMIN } = require('../../common/constants/roles');
 router.use(protect);
 router.use(allowRoles(ADMIN));
 
-/**
- * @swagger
- * /payments:
- *   patch:
- *     summary: Update payment
- *     tags: [Payments]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [bookingId, payment]
- *             properties:
- *               bookingId:
- *                 type: string
- *                 example: 60d5ec49f9f14b001c8e4d1a
- *               payment:
- *                 type: string
- *                 example: completed
- *     responses:
- *       200:
- *         description: Payment updated successfully
- */
 router.patch('/', paymentController.updatePayment);
 
 module.exports = router;

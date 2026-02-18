@@ -15,15 +15,12 @@ const technicianJobsRoutes = require('./src/modules/technicians/jobs/technicianJ
 
 const errorHandler = require('./src/common/middleware/error.middleware');
 const { globalLimiter } = require('./src/common/middleware/rateLimit.middleware');
-const setupSwagger = require('./src/config/swagger');
 const cors = require('./src/config/cors');
 
 /**
  * ✅ TRUST PROXY (for rate limit behind proxy)
  */
 app.set('trust proxy', 1);
-
-setupSwagger(app);
 
 app.use(cors);
 app.use(express.json());
