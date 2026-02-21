@@ -50,16 +50,39 @@ export const useUpdatePayment = () => {
     });
 };
 
+import { getFromIndexedDB, saveToIndexedDB } from "../../lib/indexedDB";
+
 export const useBookingsInfinite = (filters: any) =>
     useInfiniteQuery<BookingListResponse>({
         queryKey: ["bookings-infinite", filters],
         initialPageParam: 1, // ✅ REQUIRED in v5
-        queryFn: ({ pageParam }) =>
-            getBookingsApi({
+        queryFn: async ({ pageParam }) => {
+            const params = {
                 ...filters,
                 page: pageParam,
                 limit: 10,
-            }),
+            };
+
+            const qs = new URLSearchParams(
+                Object.entries(params)
+                    .filter(([_, v]) => v !== undefined && v !== null && v !== "")
+                    .map(([k, v]) => [k, String(v)])
+            ).toString();
+            const fetchKey = qs ? `bookings-${qs}` : "bookings-all";
+
+            if (!navigator.onLine) {
+                const cachedData = await getFromIndexedDB("bookings", fetchKey);
+                // @ts-ignore
+                if (cachedData && 'data' in cachedData) return cachedData.data as BookingListResponse;
+                throw new Error("Offline and no data cached");
+            }
+
+            const data = await getBookingsApi(params);
+            await saveToIndexedDB("bookings", fetchKey, data);
+            await saveToIndexedDB("app-state", "global-sync", { lastSyncedAt: Date.now() });
+
+            return data;
+        },
         getNextPageParam: (lastPage) => {
             if (!lastPage?.pagination) return undefined;
             const { page, pages } = lastPage.pagination;
