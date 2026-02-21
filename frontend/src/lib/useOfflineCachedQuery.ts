@@ -18,6 +18,7 @@ export const useOfflineCachedQuery = <T,>(apiUrl: string, cacheKey: string) => {
             if (cachedData) {
                 setData(cachedData);
                 setIsStale(true);
+                setIsLoading(false); // Instantly unlock the UI! 
             }
 
             // 2. Refresh from Network if online
