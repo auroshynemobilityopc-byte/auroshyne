@@ -27,7 +27,7 @@ export const useOfflineCachedQuery = <T,>(apiUrl: string, storeName: StoreName, 
 
             // Online flow
             const res = await api.get(apiUrl);
-            const fetchedData = res.data?.data || res.data;
+            const fetchedData = res.data;
 
             setData(fetchedData);
             await saveToIndexedDB(storeName, fetchKey, fetchedData);

@@ -61,6 +61,7 @@ export const useBookingsInfinite = (filters: any) =>
                 limit: 10,
             }),
         getNextPageParam: (lastPage) => {
+            if (!lastPage?.pagination) return undefined;
             const { page, pages } = lastPage.pagination;
             return page < pages ? page + 1 : undefined;
         },

@@ -219,7 +219,7 @@ export const BookingsPage = () => {
 
                     <Button
                         variant="secondary"
-                        disabled={page === data?.pagination.pages}
+                        disabled={page === data?.pagination?.pages}
                         onClick={() => setPage((p) => p + 1)}
                     >
                         Next
