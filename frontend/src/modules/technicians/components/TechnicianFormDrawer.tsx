@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Drawer } from "../../../components/shared/Drawer";
 import { Input } from "../../../components/shared/Input";
 import { Button } from "../../../components/shared/Button";
@@ -16,13 +17,22 @@ export const TechnicianFormDrawer: React.FC<Props> = ({
     onSubmit,
     defaultValues,
 }) => {
-    const { register, handleSubmit } = useForm({
+    const { register, handleSubmit, reset } = useForm({
         defaultValues,
     });
 
+    useEffect(() => {
+        if (open) {
+            reset(defaultValues || {
+                name: "",
+                mobile: ""
+            });
+        }
+    }, [open, defaultValues, reset]);
+
     return (
         <Drawer open={open} onClose={onClose}>
-            <h2 className="text-lg mb-4">Technician</h2>
+            <h2 className="text-lg mb-4">{defaultValues ? "Edit Technician" : "New Technician"}</h2>
 
             <form
                 onSubmit={handleSubmit(onSubmit)}

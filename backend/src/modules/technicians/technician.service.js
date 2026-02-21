@@ -11,7 +11,6 @@ exports.createTechnician = async (payload) => {
 exports.getTechnicians = async ({ page, limit, isActive }, role) => {
     const skip = (page - 1) * limit;
 
-    console.log(isActive);
     // Build filter object
     const filter = {};
     if (role === 'ADMIN' && isActive !== undefined) {
@@ -19,8 +18,6 @@ exports.getTechnicians = async ({ page, limit, isActive }, role) => {
     } else if (role === 'CUSTOMER') {
         filter.isActive = true;
     }
-
-    console.log(filter);
 
     const [data, total] = await Promise.all([
         Technician.find(filter).skip(skip).limit(limit).lean(),

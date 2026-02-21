@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { Drawer } from "../../../components/shared/Drawer";
 import { Input } from "../../../components/shared/Input";
@@ -18,9 +19,21 @@ export const UserFormDrawer: React.FC<Props> = ({
     defaultValues,
     isEdit,
 }) => {
-    const { register, handleSubmit } = useForm({
+    const { register, handleSubmit, reset } = useForm({
         defaultValues,
     });
+
+    useEffect(() => {
+        if (open) {
+            reset(defaultValues || {
+                name: "",
+                email: "",
+                mobile: "",
+                role: "CUSTOMER",
+                password: ""
+            });
+        }
+    }, [open, defaultValues, reset]);
 
     return (
         <Drawer open={open} onClose={onClose}>

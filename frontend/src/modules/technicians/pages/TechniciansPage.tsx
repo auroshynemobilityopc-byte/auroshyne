@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "react-hot-toast";
 import {
     useTechnicians,
     useCreateTechnician,
@@ -28,7 +29,12 @@ export const TechniciansPage = () => {
 
     const handleCreate = (form: any) => {
         createMutation.mutate(form, {
-            onSuccess: () => setOpen(false),
+            onSuccess: () => {
+                toast.success("Technician created successfully");
+                setOpen(false);
+                setTimeout(() => window.location.reload(), 500);
+            },
+            onError: () => toast.error("Something went wrong. Please try again.")
         });
     };
 
@@ -38,9 +44,21 @@ export const TechniciansPage = () => {
     };
 
     const handleUpdate = (form: any) => {
+        const payload = {
+            name: form.name,
+            mobile: form.mobile,
+            isActive: selected.isActive
+        };
         updateMutation.mutate(
-            { id: selected._id, data: form },
-            { onSuccess: () => setOpen(false) }
+            { id: selected._id, data: payload },
+            {
+                onSuccess: () => {
+                    toast.success("Technician updated successfully");
+                    setOpen(false);
+                    setTimeout(() => window.location.reload(), 500);
+                },
+                onError: () => toast.error("Something went wrong. Please try again.")
+            }
         );
     };
 

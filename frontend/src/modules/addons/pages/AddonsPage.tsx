@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "react-hot-toast";
 import {
     useAddons,
     useCreateAddon,
@@ -28,7 +29,12 @@ export const AddonsPage = () => {
 
     const handleCreate = (form: any) => {
         createMutation.mutate(form, {
-            onSuccess: () => setOpen(false),
+            onSuccess: () => {
+                toast.success("✅ Add-on created successfully");
+                setOpen(false);
+                setTimeout(() => window.location.reload(), 500);
+            },
+            onError: () => toast.error("❌ Something went wrong. Please try again.")
         });
     };
 
@@ -38,9 +44,22 @@ export const AddonsPage = () => {
     };
 
     const handleUpdate = (form: any) => {
+        const payload = {
+            name: form.name,
+            price: Number(form.price),
+            vehicleType: form.vehicleType,
+            isActive: selected.isActive
+        };
         updateMutation.mutate(
-            { id: selected._id, data: form },
-            { onSuccess: () => setOpen(false) }
+            { id: selected._id, data: payload },
+            {
+                onSuccess: () => {
+                    toast.success("✏️ Add-on updated successfully");
+                    setOpen(false);
+                    setTimeout(() => window.location.reload(), 500);
+                },
+                onError: () => toast.error("❌ Something went wrong. Please try again.")
+            }
         );
     };
 

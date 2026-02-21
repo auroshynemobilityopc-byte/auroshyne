@@ -14,7 +14,6 @@ const generateToken = (user) => {
 };
 
 exports.login = async ({ email, password }) => {
-    console.log(email, password);
     const user = await User.findOne({ email, isActive: true }).select('+password');
 
     if (!user) throw new AppError('Invalid credentials', 401);

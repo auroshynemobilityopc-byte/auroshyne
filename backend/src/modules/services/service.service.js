@@ -21,7 +21,6 @@ exports.getServices = async ({ page, limit, isActive }, role) => {
     } else if (role === 'CUSTOMER') {
         filter.isActive = true;
     }
-    console.log(filter);
 
     const [data, total] = await Promise.all([
         Service.find(filter).skip(skip).limit(limit).lean(),

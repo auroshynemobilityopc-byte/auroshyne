@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Drawer } from "../../../components/shared/Drawer";
 import { Input } from "../../../components/shared/Input";
 import { Button } from "../../../components/shared/Button";
@@ -16,13 +17,23 @@ export const AddonFormDrawer: React.FC<Props> = ({
     onSubmit,
     defaultValues,
 }) => {
-    const { register, handleSubmit } = useForm({
+    const { register, handleSubmit, reset } = useForm({
         defaultValues,
     });
 
+    useEffect(() => {
+        if (open) {
+            reset(defaultValues || {
+                name: "",
+                price: "",
+                vehicleType: "2W"
+            });
+        }
+    }, [open, defaultValues, reset]);
+
     return (
         <Drawer open={open} onClose={onClose}>
-            <h2 className="text-lg mb-4">Add-on</h2>
+            <h2 className="text-lg mb-4">{defaultValues ? "Edit Add-on" : "New Add-on"}</h2>
 
             <form
                 onSubmit={handleSubmit(onSubmit)}

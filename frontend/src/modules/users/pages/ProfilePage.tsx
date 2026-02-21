@@ -4,6 +4,7 @@ import { Input } from "../../../components/shared/Input";
 import { Button } from "../../../components/shared/Button";
 import { useForm } from "react-hook-form";
 import { UserCircle, Mail, Shield } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 export const ProfilePage = () => {
     const { data: me } = useMe();
@@ -49,9 +50,19 @@ export const ProfilePage = () => {
                 </h3>
 
                 <form
-                    onSubmit={handleSubmit((form) =>
-                        updateMutation.mutate(form)
-                    )}
+                    onSubmit={handleSubmit((form) => {
+                        const payload = {
+                            name: form.name,
+                            mobile: form.mobile,
+                        };
+                        updateMutation.mutate(payload, {
+                            onSuccess: () => {
+                                toast.success("Profile updated successfully");
+                                setTimeout(() => window.location.reload(), 500);
+                            },
+                            onError: () => toast.error(" Something went wrong. Please try again.")
+                        });
+                    })}
                     className="grid grid-cols-1 md:grid-cols-2 gap-4"
                 >
                     {/* NAME */}

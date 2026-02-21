@@ -26,7 +26,17 @@ export const LoginPage = () => {
                 window.location.href = "/admin";
             },
             onError: (error: any) => {
-                const message = error.response?.data?.message || "An unexpected error occurred during login";
+                let message = "An unexpected error occurred during login";
+                if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+                    message = "Server timeout. Please check your connection and try again.";
+                } else if (!error.response) {
+                    message = "Network error. Please check your internet connection.";
+                } else if (error.response?.status === 401) {
+                    message = "Incorrect email or password.";
+                } else if (error.response?.data?.message) {
+                    message = error.response.data.message;
+                }
+
                 toast.error(message);
             }
         });

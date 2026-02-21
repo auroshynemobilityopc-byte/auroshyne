@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Drawer } from "../../../components/shared/Drawer";
 import { Input } from "../../../components/shared/Input";
 import { Button } from "../../../components/shared/Button";
@@ -16,13 +17,24 @@ export const ServiceFormDrawer: React.FC<Props> = ({
     onSubmit,
     defaultValues,
 }) => {
-    const { register, handleSubmit } = useForm({
+    const { register, handleSubmit, reset } = useForm({
         defaultValues,
     });
 
+    useEffect(() => {
+        if (open) {
+            reset(defaultValues || {
+                name: "",
+                vehicleType: "2W",
+                price: "",
+                description: ""
+            });
+        }
+    }, [open, defaultValues, reset]);
+
     return (
         <Drawer open={open} onClose={onClose}>
-            <h2 className="text-lg mb-4">Service</h2>
+            <h2 className="text-lg mb-4">{defaultValues ? "Edit Service" : "New Service"}</h2>
 
             <form
                 onSubmit={handleSubmit(onSubmit)}
@@ -31,7 +43,6 @@ export const ServiceFormDrawer: React.FC<Props> = ({
                 <Input placeholder="Name" {...register("name")} />
                 <select
                     className="border border-zinc-300 bg-zinc-900 rounded-xl p-2 focus:outline-none focus:border-blue-500 focus:ring-blue-500 "
-
                     {...register("vehicleType")}
                 >
                     <option value="2W">2W</option>

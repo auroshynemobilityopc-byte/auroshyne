@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "react-hot-toast";
 import {
     useServices,
     useCreateService,
@@ -28,7 +29,12 @@ export const ServicesPage = () => {
 
     const handleCreate = (form: any) => {
         createMutation.mutate(form, {
-            onSuccess: () => setOpen(false),
+            onSuccess: () => {
+                toast.success("✅ Service created successfully");
+                setOpen(false);
+                setTimeout(() => window.location.reload(), 500);
+            },
+            onError: () => toast.error("❌ Something went wrong. Please try again.")
         });
     };
 
@@ -38,9 +44,23 @@ export const ServicesPage = () => {
     };
 
     const handleUpdate = (form: any) => {
+        const payload = {
+            name: form.name,
+            vehicleType: form.vehicleType,
+            price: Number(form.price),
+            description: form.description,
+            isActive: selected.isActive
+        };
         updateMutation.mutate(
-            { id: selected._id, data: form },
-            { onSuccess: () => setOpen(false) }
+            { id: selected._id, data: payload },
+            {
+                onSuccess: () => {
+                    toast.success("✏️ Service updated successfully");
+                    setOpen(false);
+                    setTimeout(() => window.location.reload(), 500);
+                },
+                onError: () => toast.error("❌ Something went wrong. Please try again.")
+            }
         );
     };
 
