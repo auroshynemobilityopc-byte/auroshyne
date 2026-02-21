@@ -41,14 +41,48 @@ export default defineConfig({
       ],
     },
     workbox: {
-      navigateFallback: "/admin",
+      maximumFileSizeToCacheInBytes: 5000000,
+      globPatterns: ["**/*.{js,css,html,ico,png,svg,json}"],
+      navigateFallback: "/index.html",
       runtimeCaching: [
         {
-          urlPattern: /^https:\/\/.*$/,
+          urlPattern: /^.*\/api\/(bookings|customers|services|dashboard).*/i,
           handler: "NetworkFirst",
+          method: "GET",
           options: {
-            cacheName: "api-cache",
-            networkTimeoutSeconds: 5,
+            cacheName: "api-stale-cache",
+            networkTimeoutSeconds: 3,
+            expiration: {
+              maxEntries: 100,
+              maxAgeSeconds: 60 * 60 * 24 * 7, // 1 week
+            },
+            cacheableResponse: {
+              statuses: [0, 200],
+            },
+          },
+        },
+        {
+          urlPattern: /^.*\/api\/.*/i,
+          handler: "NetworkOnly",
+          method: "POST",
+          options: {
+            cacheName: "api-network-only-post",
+          },
+        },
+        {
+          urlPattern: /^.*\/api\/.*/i,
+          handler: "NetworkOnly",
+          method: "PATCH",
+          options: {
+            cacheName: "api-network-only-patch",
+          },
+        },
+        {
+          urlPattern: /^.*\/api\/.*/i,
+          handler: "NetworkOnly",
+          method: "DELETE",
+          options: {
+            cacheName: "api-network-only-delete",
           },
         },
       ],

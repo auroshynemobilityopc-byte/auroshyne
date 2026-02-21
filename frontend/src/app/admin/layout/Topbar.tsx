@@ -9,7 +9,7 @@ interface TopbarProps {
 }
 
 export const Topbar: React.FC<TopbarProps> = ({ title, right }) => {
-    const { install } = usePWAInstall();
+    const { install, isInstalled } = usePWAInstall();
 
     return (
         <div className="h-14 flex items-center justify-between px-3 lg:px-4 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur sticky top-0 z-30">
@@ -36,13 +36,15 @@ export const Topbar: React.FC<TopbarProps> = ({ title, right }) => {
 
             {/* MOBILE ACTIONS */}
             <div className="flex items-center gap-1 lg:hidden">
-                <button
-                    onClick={install}
-                    className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-zinc-800 transition-all duration-150 focus:outline-none"
-                    title="Install App"
-                >
-                    <Download className="w-5 h-5 text-indigo-400" />
-                </button>
+                {!isInstalled && (
+                    <button
+                        onClick={install}
+                        className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-zinc-800 transition-all duration-150 focus:outline-none"
+                        title="Install App"
+                    >
+                        <Download className="w-5 h-5 text-indigo-400" />
+                    </button>
+                )}
 
                 <div className="relative group">
                     <button className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-zinc-800 transition-all duration-150 focus:outline-none">

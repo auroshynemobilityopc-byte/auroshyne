@@ -8,11 +8,23 @@ import {
 } from "./api";
 import type { BookingListResponse } from "./types";
 
-export const useBookings = (params: any) =>
-    useQuery({
-        queryKey: ["bookings", params],
-        queryFn: () => getBookingsApi(params),
-    });
+import { useOfflineCachedQuery } from "../../lib/useOfflineCachedQuery";
+
+export const useBookings = (params: any) => {
+    const qs = params
+        ? new URLSearchParams(
+            Object.entries(params)
+                .filter(([_, v]) => v !== undefined && v !== null && v !== "")
+                .map(([k, v]) => [k, String(v)])
+        ).toString()
+        : "";
+
+    return useOfflineCachedQuery<BookingListResponse>(
+        `/bookings${qs ? `?${qs}` : ""}`,
+        "bookings",
+        qs ? `bookings-${qs}` : "bookings-all"
+    );
+};
 
 export const useAssignTechnician = () => {
     const qc = useQueryClient();
