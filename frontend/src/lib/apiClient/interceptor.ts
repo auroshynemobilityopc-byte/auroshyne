@@ -17,6 +17,9 @@ type QueueItem = {
 let queue: QueueItem[] = [];
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+    if (!navigator.onLine) {
+        return Promise.reject(new Error("You are offline. API calls are disabled."));
+    }
     const token = getAccessToken();
     if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;

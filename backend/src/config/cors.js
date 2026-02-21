@@ -19,3 +19,7 @@ const corsOptions = {
 };
 
 module.exports = cors(corsOptions);
+// module.exports = cors({
+//     origin: true, // allow all origins dynamically
+//     credentials: true,
+// });

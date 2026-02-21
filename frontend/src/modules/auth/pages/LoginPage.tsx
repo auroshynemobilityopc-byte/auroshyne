@@ -4,6 +4,7 @@ import { Card } from "../../../components/shared/Card";
 import { Input } from "../../../components/shared/Input";
 import { Button } from "../../../components/shared/Button";
 import { FormField } from "../../../components/shared/FormField";
+import { toast } from "react-hot-toast";
 
 interface FormValues {
     email: string;
@@ -18,11 +19,16 @@ export const LoginPage = () => {
         login.mutate(data, {
             onSuccess: (res) => {
                 if (res.user.role !== "ADMIN") {
-                    alert("Not authorized");
+                    toast.error("Not authorized. Admin access only.");
                     return;
                 }
+                toast.success("Login successful!");
                 window.location.href = "/admin";
             },
+            onError: (error: any) => {
+                const message = error.response?.data?.message || "An unexpected error occurred during login";
+                toast.error(error.response?.data?.message);
+            }
         });
     };
 

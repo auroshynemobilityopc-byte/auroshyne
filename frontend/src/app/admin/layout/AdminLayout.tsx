@@ -4,6 +4,8 @@ import clsx from "clsx";
 import { Topbar } from "./Topbar";
 import { BottomNav } from "./BottomNav";
 import { Sidebar } from "./Sidebar";
+import { InstallPWA } from "../../../components/InstallPWA";
+import { OfflineWarning } from "../../../components/OfflineWarning";
 
 interface AdminLayoutProps {
     title?: string;
@@ -66,6 +68,8 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ title }) => {
 
     return (
         <div className="min-h-screen bg-zinc-950 text-zinc-100 flex">
+            <OfflineWarning />
+            <InstallPWA />
 
             {/* DESKTOP SIDEBAR */}
             <div className="hidden lg:block">

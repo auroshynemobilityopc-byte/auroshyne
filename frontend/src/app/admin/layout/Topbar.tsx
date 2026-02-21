@@ -1,6 +1,7 @@
 import React from "react";
-import { Bell, MoreVertical } from "lucide-react";
+import { Bell, MoreVertical, Download } from "lucide-react";
 import { Link } from "react-router-dom";
+import { usePWAInstall } from "../../../lib/usePWAInstall";
 
 interface TopbarProps {
     title?: string;
@@ -8,6 +9,8 @@ interface TopbarProps {
 }
 
 export const Topbar: React.FC<TopbarProps> = ({ title, right }) => {
+    const { install } = usePWAInstall();
+
     return (
         <div className="h-14 flex items-center justify-between px-3 lg:px-4 border-b border-zinc-800 bg-zinc-950/80 backdrop-blur sticky top-0 z-30">
 
@@ -31,37 +34,47 @@ export const Topbar: React.FC<TopbarProps> = ({ title, right }) => {
                 </div>
             </div>
 
-            {/* MOBILE ACTIONS WITH DROPDOWN */}
-            <div className="relative lg:hidden group">
-                <button className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-zinc-800 transition-all duration-150 focus:outline-none">
-                    <MoreVertical className="w-5 h-5 text-zinc-400" />
+            {/* MOBILE ACTIONS */}
+            <div className="flex items-center gap-1 lg:hidden">
+                <button
+                    onClick={install}
+                    className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-zinc-800 transition-all duration-150 focus:outline-none"
+                    title="Install App"
+                >
+                    <Download className="w-5 h-5 text-indigo-400" />
                 </button>
 
-                {/* DROPDOWN */}
-                <div className="absolute right-0 mt-2 w-44 bg-zinc-900 border border-zinc-800 rounded-xl shadow-lg shadow-black/30 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-all duration-150">
+                <div className="relative group">
+                    <button className="h-10 w-10 flex items-center justify-center rounded-xl hover:bg-zinc-800 transition-all duration-150 focus:outline-none">
+                        <MoreVertical className="w-5 h-5 text-zinc-400" />
+                    </button>
 
-                    <Link
-                        to="/admin/profile"
-                        className="block px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 rounded-t-xl"
-                    >
-                        Profile / Me
-                    </Link>
+                    {/* DROPDOWN */}
+                    <div className="absolute right-0 mt-2 w-44 bg-zinc-900 border border-zinc-800 rounded-xl shadow-lg shadow-black/30 opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto transition-all duration-150">
 
-                    <div className="h-px bg-zinc-800" />
+                        <Link
+                            to="/admin/profile"
+                            className="block px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 rounded-t-xl"
+                        >
+                            Profile / Me
+                        </Link>
 
-                    <Link
-                        to="/admin/change-password"
-                        className="block px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800"
-                    >
-                        Change Password
-                    </Link>
+                        <div className="h-px bg-zinc-800" />
 
-                    <Link
-                        to="/admin/logout"
-                        className="block px-3 py-2 text-sm text-red-400 hover:bg-zinc-800 rounded-b-xl"
-                    >
-                        Logout
-                    </Link>
+                        <Link
+                            to="/admin/change-password"
+                            className="block px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800"
+                        >
+                            Change Password
+                        </Link>
+
+                        <Link
+                            to="/admin/logout"
+                            className="block px-3 py-2 text-sm text-red-400 hover:bg-zinc-800 rounded-b-xl"
+                        >
+                            Logout
+                        </Link>
+                    </div>
                 </div>
             </div>
 
