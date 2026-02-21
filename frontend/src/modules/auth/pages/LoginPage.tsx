@@ -27,7 +27,7 @@ export const LoginPage = () => {
             },
             onError: (error: any) => {
                 const message = error.response?.data?.message || "An unexpected error occurred during login";
-                toast.error(error.response?.data?.message);
+                toast.error(message);
             }
         });
     };
