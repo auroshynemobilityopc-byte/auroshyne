@@ -44,11 +44,42 @@ export default defineConfig({
       navigateFallback: "/admin",
       runtimeCaching: [
         {
-          urlPattern: /^https:\/\/.*$/,
-          handler: "NetworkFirst",
+          urlPattern: /^.*\/api\/.*/i,
+          handler: "StaleWhileRevalidate",
+          method: "GET",
           options: {
-            cacheName: "api-cache",
-            networkTimeoutSeconds: 5,
+            cacheName: "api-stale-cache",
+            expiration: {
+              maxEntries: 100,
+              maxAgeSeconds: 60 * 60 * 24 * 7, // 1 week
+            },
+            cacheableResponse: {
+              statuses: [0, 200],
+            },
+          },
+        },
+        {
+          urlPattern: /^.*\/api\/.*/i,
+          handler: "NetworkOnly",
+          method: "POST",
+          options: {
+            cacheName: "api-network-only-post",
+          },
+        },
+        {
+          urlPattern: /^.*\/api\/.*/i,
+          handler: "NetworkOnly",
+          method: "PATCH",
+          options: {
+            cacheName: "api-network-only-patch",
+          },
+        },
+        {
+          urlPattern: /^.*\/api\/.*/i,
+          handler: "NetworkOnly",
+          method: "DELETE",
+          options: {
+            cacheName: "api-network-only-delete",
           },
         },
       ],
