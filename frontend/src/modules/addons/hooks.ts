@@ -1,23 +1,39 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-    getAddonsApi,
     createAddonApi,
     updateAddonApi,
-    getAddonsByVehicleTypeApi,
 } from "./api";
+import { useOfflineCachedQuery } from "../../lib/useOfflineCachedQuery";
+import type { AddonListResponse } from "./types";
 
-export const useAddons = (params?: any) =>
-    useQuery({
-        queryKey: ["addons", params],
-        queryFn: () => getAddonsApi(params),
-    });
+export const useAddons = (params?: any) => {
+    const qs = params
+        ? new URLSearchParams(
+            Object.entries(params)
+                .filter(([_, v]) => v !== undefined && v !== null && v !== "")
+                .map(([k, v]) => [k, String(v)])
+        ).toString()
+        : "";
 
-export const useActiveAddons = () =>
-    useQuery({
-        queryKey: ["addons-active"],
-        queryFn: () => getAddonsApi({ limit: 100 }),
-        select: (res) => res.data.filter((a) => a.isActive),
-    });
+    return useOfflineCachedQuery<AddonListResponse>(
+        `/addons${qs ? `?${qs}` : ""}`,
+        "addons",
+        qs ? `addons-${qs}` : "addons-all"
+    );
+};
+
+export const useActiveAddons = () => {
+    const query = useOfflineCachedQuery<AddonListResponse>(
+        "/addons?limit=100",
+        "addons",
+        "addons-limit=100"
+    );
+
+    return {
+        ...query,
+        data: query.data?.data?.filter((a: any) => a.isActive) || []
+    };
+};
 
 export const useCreateAddon = () => {
     const qc = useQueryClient();
@@ -36,8 +52,15 @@ export const useUpdateAddon = () => {
     });
 };
 
-export const useAddonsByVehicleType = (vehicleType: string) =>
-    useQuery({
-        queryKey: ["addons-vehicleType", vehicleType],
-        queryFn: () => getAddonsByVehicleTypeApi(vehicleType),
-    });
+export const useAddonsByVehicleType = (vehicleType: string) => {
+    const query = useOfflineCachedQuery<AddonListResponse>(
+        `/addons/vehicleType/${vehicleType}`,
+        "addons",
+        `addons-vehicleType-${vehicleType}`
+    );
+
+    return {
+        ...query,
+        data: query.data?.data || []
+    };
+};

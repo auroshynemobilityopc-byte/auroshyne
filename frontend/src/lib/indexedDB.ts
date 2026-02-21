@@ -2,7 +2,7 @@ import { openDB } from 'idb';
 import type { DBSchema, IDBPDatabase } from 'idb';
 
 const DB_NAME = "carwash-offline-db";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 interface OfflineDB extends DBSchema {
     bookings: {
@@ -30,6 +30,22 @@ interface OfflineDB extends DBSchema {
         };
     };
     stats: {
+        key: string;
+        value: {
+            key: string;
+            data: any;
+            lastSyncedAt: number;
+        };
+    };
+    addons: {
+        key: string;
+        value: {
+            key: string;
+            data: any;
+            lastSyncedAt: number;
+        };
+    };
+    technicians: {
         key: string;
         value: {
             key: string;
@@ -67,13 +83,19 @@ export const initDB = () => {
                 if (!db.objectStoreNames.contains('app-state')) {
                     db.createObjectStore('app-state', { keyPath: 'key' });
                 }
+                if (!db.objectStoreNames.contains('addons')) {
+                    db.createObjectStore('addons', { keyPath: 'key' });
+                }
+                if (!db.objectStoreNames.contains('technicians')) {
+                    db.createObjectStore('technicians', { keyPath: 'key' });
+                }
             },
         });
     }
     return dbPromise;
 };
 
-export type StoreName = 'bookings' | 'customers' | 'services' | 'stats' | 'app-state';
+export type StoreName = 'bookings' | 'customers' | 'services' | 'stats' | 'addons' | 'technicians' | 'app-state';
 
 export const saveToIndexedDB = async (storeName: StoreName, key: string, data: any) => {
     const db = await initDB();

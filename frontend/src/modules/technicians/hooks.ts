@@ -1,22 +1,39 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-    getTechniciansApi,
     createTechnicianApi,
     updateTechnicianApi,
 } from "./api";
+import { useOfflineCachedQuery } from "../../lib/useOfflineCachedQuery";
+import type { TechnicianListResponse } from "./types";
 
-export const useTechnicians = (params?: any) =>
-    useQuery({
-        queryKey: ["technicians", params],
-        queryFn: () => getTechniciansApi(params),
-    });
+export const useTechnicians = (params?: any) => {
+    const qs = params
+        ? new URLSearchParams(
+            Object.entries(params)
+                .filter(([_, v]) => v !== undefined && v !== null && v !== "")
+                .map(([k, v]) => [k, String(v)])
+        ).toString()
+        : "";
 
-export const useActiveTechnicians = () =>
-    useQuery({
-        queryKey: ["technicians-active"],
-        queryFn: () => getTechniciansApi({ isActive: true, limit: 100 }),
-        select: (res) => res.data,
-    });
+    return useOfflineCachedQuery<TechnicianListResponse>(
+        `/technicians${qs ? `?${qs}` : ""}`,
+        "technicians",
+        qs ? `technicians-${qs}` : "technicians-all"
+    );
+};
+
+export const useActiveTechnicians = () => {
+    const query = useOfflineCachedQuery<TechnicianListResponse>(
+        "/technicians?isActive=true&limit=100",
+        "technicians",
+        "technicians-active=true"
+    );
+
+    return {
+        ...query,
+        data: query.data?.data || []
+    };
+};
 
 export const useCreateTechnician = () => {
     const qc = useQueryClient();

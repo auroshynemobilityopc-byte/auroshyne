@@ -1,15 +1,27 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
-    getServicesApi,
     createServiceApi,
     updateServiceApi,
 } from "./api";
 
-export const useServices = (params?: any) =>
-    useQuery({
-        queryKey: ["services", params],
-        queryFn: () => getServicesApi(params),
-    });
+import { useOfflineCachedQuery } from "../../lib/useOfflineCachedQuery";
+import type { ServiceListResponse } from "./types";
+
+export const useServices = (params?: any) => {
+    const qs = params
+        ? new URLSearchParams(
+            Object.entries(params)
+                .filter(([_, v]) => v !== undefined && v !== null && v !== "")
+                .map(([k, v]) => [k, String(v)])
+        ).toString()
+        : "";
+
+    return useOfflineCachedQuery<ServiceListResponse>(
+        `/services${qs ? `?${qs}` : ""}`,
+        "services",
+        qs ? `services-${qs}` : "services-all"
+    );
+};
 
 export const useCreateService = () => {
     const qc = useQueryClient();
