@@ -1,39 +1,91 @@
-const DB_NAME = "pwa-cache-db";
-const STORE_NAME = "api-cache";
+import { openDB } from 'idb';
+import type { DBSchema, IDBPDatabase } from 'idb';
 
-const initDB = (): Promise<IDBDatabase> => {
-    return new Promise((resolve, reject) => {
-        // Incrementing version by 2 to assure fresh upgrade lifecycle
-        const request = indexedDB.open(DB_NAME, 2);
-        request.onupgradeneeded = (e) => {
-            const db = (e.target as IDBOpenDBRequest).result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) {
-                db.createObjectStore(STORE_NAME, { keyPath: "key" });
-            }
+const DB_NAME = "carwash-offline-db";
+const DB_VERSION = 1;
+
+interface OfflineDB extends DBSchema {
+    bookings: {
+        key: string;
+        value: {
+            key: string;
+            data: any;
+            lastSyncedAt: number;
         };
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
+    };
+    customers: {
+        key: string;
+        value: {
+            key: string;
+            data: any;
+            lastSyncedAt: number;
+        };
+    };
+    services: {
+        key: string;
+        value: {
+            key: string;
+            data: any;
+            lastSyncedAt: number;
+        };
+    };
+    stats: {
+        key: string;
+        value: {
+            key: string;
+            data: any;
+            lastSyncedAt: number;
+        };
+    };
+    "app-state": {
+        key: string;
+        value: {
+            key: string;
+            lastSyncedAt: number;
+        };
+    };
+}
+
+let dbPromise: Promise<IDBPDatabase<OfflineDB>> | null = null;
+
+export const initDB = () => {
+    if (!dbPromise) {
+        dbPromise = openDB<OfflineDB>(DB_NAME, DB_VERSION, {
+            upgrade(db) {
+                if (!db.objectStoreNames.contains('bookings')) {
+                    db.createObjectStore('bookings', { keyPath: 'key' });
+                }
+                if (!db.objectStoreNames.contains('customers')) {
+                    db.createObjectStore('customers', { keyPath: 'key' });
+                }
+                if (!db.objectStoreNames.contains('services')) {
+                    db.createObjectStore('services', { keyPath: 'key' });
+                }
+                if (!db.objectStoreNames.contains('stats')) {
+                    db.createObjectStore('stats', { keyPath: 'key' });
+                }
+                if (!db.objectStoreNames.contains('app-state')) {
+                    db.createObjectStore('app-state', { keyPath: 'key' });
+                }
+            },
+        });
+    }
+    return dbPromise;
+};
+
+export type StoreName = 'bookings' | 'customers' | 'services' | 'stats' | 'app-state';
+
+export const saveToIndexedDB = async (storeName: StoreName, key: string, data: any) => {
+    const db = await initDB();
+    await db.put(storeName, {
+        key,
+        data,
+        lastSyncedAt: Date.now()
     });
 };
 
-export const idbSet = async (key: string, data: any) => {
+export const getFromIndexedDB = async (storeName: StoreName, key: string) => {
     const db = await initDB();
-    return new Promise<void>((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, "readwrite");
-        const store = tx.objectStore(STORE_NAME);
-        store.put({ key, data, timestamp: Date.now() });
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-    });
-};
-
-export const idbGet = async (key: string) => {
-    const db = await initDB();
-    return new Promise<any>((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, "readonly");
-        const store = tx.objectStore(STORE_NAME);
-        const req = store.get(key);
-        req.onsuccess = () => resolve(req.result ? req.result.data : null);
-        req.onerror = () => reject(req.error);
-    });
+    const result = await db.get(storeName, key);
+    return result || null;
 };

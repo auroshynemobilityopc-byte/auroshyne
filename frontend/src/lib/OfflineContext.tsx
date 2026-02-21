@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
+import { getFromIndexedDB, saveToIndexedDB } from './indexedDB';
 
 interface OfflineContextProps {
     isOffline: boolean;
@@ -15,14 +16,28 @@ const OfflineContext = createContext<OfflineContextProps>({
 
 export const OfflineProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isOffline, setIsOffline] = useState(!navigator.onLine);
-    const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(() => {
-        const saved = localStorage.getItem('pwa-last-sync');
-        return saved ? parseInt(saved, 10) : null;
-    });
+    const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
+    const [isReady, setIsReady] = useState(false);
 
-    const updateLastSync = useCallback((timestamp: number) => {
+    useEffect(() => {
+        const init = async () => {
+            try {
+                const appState = await getFromIndexedDB('app-state', 'global-sync');
+                if (appState?.lastSyncedAt) {
+                    setLastSyncedAt(appState.lastSyncedAt);
+                }
+            } catch (error) {
+                console.error("Failed loading app state from IDB", error);
+            } finally {
+                setIsReady(true);
+            }
+        };
+        init();
+    }, []);
+
+    const updateLastSync = useCallback(async (timestamp: number) => {
         setLastSyncedAt(timestamp);
-        localStorage.setItem('pwa-last-sync', timestamp.toString());
+        await saveToIndexedDB('app-state', 'global-sync', { lastSyncedAt: timestamp });
     }, []);
 
     useEffect(() => {
@@ -47,6 +62,8 @@ export const OfflineProvider: React.FC<{ children: React.ReactNode }> = ({ child
         if (!timestamp) return "Never";
         return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
+
+    if (!isReady) return null; // Prevents UI rendering before cache sync hydration
 
     return (
         <OfflineContext.Provider value={{ isOffline, lastSyncedAt, updateLastSync }}>

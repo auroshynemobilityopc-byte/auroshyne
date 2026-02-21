@@ -1,54 +1,59 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "./apiClient/axios";
-import { idbGet, idbSet } from "./indexedDB";
+import { getFromIndexedDB, saveToIndexedDB } from "./indexedDB";
+import type { StoreName } from "./indexedDB";
 import { useOffline } from "./OfflineContext";
 import { toast } from "react-hot-toast";
 
-export const useOfflineCachedQuery = <T,>(apiUrl: string, cacheKey: string) => {
+export const useOfflineCachedQuery = <T,>(apiUrl: string, storeName: StoreName, fetchKey: string = "default") => {
     const { isOffline, updateLastSync } = useOffline();
     const [data, setData] = useState<T | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [isStale, setIsStale] = useState(false);
+    const [isFetching, setIsFetching] = useState(false);
 
     const fetchData = useCallback(async () => {
-        setIsLoading(true);
+        setIsFetching(true);
         try {
-            // 1. Try Cache First approach (Stale-while-revalidate pattern)
-            const cachedData = await idbGet(cacheKey);
-            if (cachedData) {
-                setData(cachedData);
-                setIsStale(true);
-                setIsLoading(false); // Instantly unlock the UI! 
+            if (isOffline) {
+                const cachedData = await getFromIndexedDB(storeName, fetchKey);
+                // @ts-ignore: We know that non app-state stores contain the data array.
+                if (cachedData && 'data' in cachedData) {
+                    // @ts-ignore
+                    setData(cachedData.data as T);
+                }
+                setIsLoading(false);
+                return;
             }
 
-            // 2. Refresh from Network if online
-            if (!isOffline) {
-                const res = await api.get(apiUrl);
-                const fetchedData = res.data?.data || res.data;
-                setData(fetchedData);
-                setIsStale(false);
+            // Online flow
+            const res = await api.get(apiUrl);
+            const fetchedData = res.data?.data || res.data;
 
-                // Update specific DB store
-                await idbSet(cacheKey, fetchedData);
+            setData(fetchedData);
+            await saveToIndexedDB(storeName, fetchKey, fetchedData);
 
-                // Update Global Context Sync Time using current time
-                updateLastSync(Date.now());
-            }
+            updateLastSync(Date.now());
         } catch (error) {
             console.error(`Fetch failed for ${apiUrl}`, error);
-            // Fallback natively to cachedData when we remain offline without error messages
+            const cachedData = await getFromIndexedDB(storeName, fetchKey);
+            // @ts-ignore
+            if (cachedData && 'data' in cachedData) {
+                // @ts-ignore
+                setData(cachedData.data as T);
+            }
         } finally {
             setIsLoading(false);
+            setIsFetching(false);
         }
-    }, [apiUrl, cacheKey, isOffline, updateLastSync]);
+    }, [apiUrl, storeName, fetchKey, isOffline, updateLastSync]);
 
     useEffect(() => {
         fetchData();
-        // Since isOffline changes true->false on reconnect, it will trigger fetchData again completely automatically syncing all used hooks instances gracefully
+        // Since isOffline changes true->false on reconnect, it will trigger fetchData again
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isOffline]);
+    }, [isOffline, apiUrl, fetchKey]);
 
-    const revalidate = async () => {
+    const refetch = async () => {
         if (isOffline) {
             toast.error("This action requires internet");
             return;
@@ -56,7 +61,7 @@ export const useOfflineCachedQuery = <T,>(apiUrl: string, cacheKey: string) => {
         await fetchData();
     };
 
-    return { data, isLoading, isStale, isOffline, revalidate };
+    return { data, isLoading, isFetching, isOffline, refetch };
 };
 
 export const offlineActionGuard = (isOffline: boolean, action: () => void) => {
