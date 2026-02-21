@@ -4,8 +4,8 @@ import { idbGet, idbSet } from "./indexedDB";
 import { useOffline } from "./OfflineContext";
 import { toast } from "react-hot-toast";
 
-export const useOfflineData = <T,>(apiUrl: string, cacheKey: string) => {
-    const { isOffline } = useOffline();
+export const useOfflineCachedQuery = <T,>(apiUrl: string, cacheKey: string) => {
+    const { isOffline, updateLastSync } = useOffline();
     const [data, setData] = useState<T | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [isStale, setIsStale] = useState(false);
@@ -26,27 +26,30 @@ export const useOfflineData = <T,>(apiUrl: string, cacheKey: string) => {
                 const fetchedData = res.data?.data || res.data;
                 setData(fetchedData);
                 setIsStale(false);
+
+                // Update specific DB store
                 await idbSet(cacheKey, fetchedData);
+
+                // Update Global Context Sync Time using current time
+                updateLastSync(Date.now());
             }
         } catch (error) {
             console.error(`Fetch failed for ${apiUrl}`, error);
-            if (isOffline && !data) {
-                toast.error("Offline and no data cached.");
-            }
+            // Fallback natively to cachedData when we remain offline without error messages
         } finally {
             setIsLoading(false);
         }
-    }, [apiUrl, cacheKey, isOffline, data]);
+    }, [apiUrl, cacheKey, isOffline, updateLastSync]);
 
     useEffect(() => {
         fetchData();
-        // Since isOffline changes true->false on reconnect, it will trigger fetchData again natively syncing fresh data
+        // Since isOffline changes true->false on reconnect, it will trigger fetchData again completely automatically syncing all used hooks instances gracefully
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOffline]);
 
     const revalidate = async () => {
         if (isOffline) {
-            toast.error("Action requires internet");
+            toast.error("This action requires internet");
             return;
         }
         await fetchData();
@@ -57,7 +60,7 @@ export const useOfflineData = <T,>(apiUrl: string, cacheKey: string) => {
 
 export const offlineActionGuard = (isOffline: boolean, action: () => void) => {
     if (isOffline) {
-        toast.error("Action requires internet");
+        toast.error("This action requires internet");
         return;
     }
     action();

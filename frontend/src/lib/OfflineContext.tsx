@@ -1,14 +1,29 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 
 interface OfflineContextProps {
     isOffline: boolean;
+    lastSyncedAt: number | null;
+    updateLastSync: (timestamp: number) => void;
 }
 
-const OfflineContext = createContext<OfflineContextProps>({ isOffline: false });
+const OfflineContext = createContext<OfflineContextProps>({
+    isOffline: false,
+    lastSyncedAt: null,
+    updateLastSync: () => { }
+});
 
 export const OfflineProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isOffline, setIsOffline] = useState(!navigator.onLine);
+    const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(() => {
+        const saved = localStorage.getItem('pwa-last-sync');
+        return saved ? parseInt(saved, 10) : null;
+    });
+
+    const updateLastSync = useCallback((timestamp: number) => {
+        setLastSyncedAt(timestamp);
+        localStorage.setItem('pwa-last-sync', timestamp.toString());
+    }, []);
 
     useEffect(() => {
         const handleOnline = () => {
@@ -17,7 +32,6 @@ export const OfflineProvider: React.FC<{ children: React.ReactNode }> = ({ child
         };
         const handleOffline = () => {
             setIsOffline(true);
-            toast("Offline Mode – Read Only", { icon: "⚠️" });
         };
 
         window.addEventListener('online', handleOnline);
@@ -29,16 +43,26 @@ export const OfflineProvider: React.FC<{ children: React.ReactNode }> = ({ child
         };
     }, []);
 
+    const formatSyncTime = (timestamp: number | null) => {
+        if (!timestamp) return "Never";
+        return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
     return (
-        <OfflineContext.Provider value={{ isOffline }}>
+        <OfflineContext.Provider value={{ isOffline, lastSyncedAt, updateLastSync }}>
             {/* Top Banner when Offline */}
             {isOffline && (
-                <div className="fixed top-0 left-0 right-0 z-[60] bg-red-500 text-white text-center text-xs py-1.5 font-medium shadow-md shadow-red-500/20 animate-in slide-in-from-top-4 flex items-center justify-center gap-2">
-                    <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
-                    </span>
-                    Offline Mode – Read Only
+                <div className="fixed top-0 left-0 right-0 z-[60] bg-zinc-900 border-b border-red-500/50 text-white flex flex-col items-center justify-center py-2 shadow-md shadow-red-500/10 animate-in slide-in-from-top-4">
+                    <div className="flex items-center gap-2 text-sm font-medium text-red-400">
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-400"></span>
+                        </span>
+                        Offline Mode – Showing last synced data
+                    </div>
+                    <div className="text-[10px] text-zinc-400 mt-0.5 font-medium">
+                        Last synced: {formatSyncTime(lastSyncedAt)}
+                    </div>
                 </div>
             )}
 
