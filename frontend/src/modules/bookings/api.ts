@@ -41,3 +41,8 @@ export const getSlotBookingsApi = async (date: string, slot: string) => {
     const res = await api.get(`/bookings/slot/${date}/${slot}`);
     return res.data.data;
 };
+
+export const createBookingApi = async (data: any) => {
+    const res = await api.post("/bookings", data);
+    return res.data;
+};

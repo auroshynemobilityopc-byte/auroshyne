@@ -21,10 +21,16 @@ import { AssignTechnicianSheet } from "../components/AssignTechnicianSheet";
 import { PaymentActions } from "../components/PaymentActions";
 import { StatusActions } from "../components/StatusActions";
 import { UpiTxnDrawer } from "../components/UpiTxnDrawer";
+import { AddBookingSheet } from "../components/AddBookingSheet";
 
 export const BookingsPage = () => {
     const [page, setPage] = useState(1);
     const [slot, setSlot] = useState("ALL");
+    const [statusFilter, setStatusFilter] = useState("ALL");
+    const [assignFilter, setAssignFilter] = useState("ALL");
+    const [paymentFilter, setPaymentFilter] = useState("ALL");
+
+    const [addOpen, setAddOpen] = useState(false);
 
     const [selectedBookingId, setSelectedBookingId] = useState<string | null>(null);
 
@@ -36,9 +42,6 @@ export const BookingsPage = () => {
     const [paymentStatus, setPaymentStatus] =
         useState<PaymentStatus>("UNPAID");
 
-    const assignMutation = useAssignTechnician();
-    const paymentMutation = useUpdatePayment();
-    const statusMutation = useUpdateStatus();
 
     const slots = ["ALL", "MORNING", "AFTERNOON", "EVENING"];
 
@@ -68,8 +71,12 @@ export const BookingsPage = () => {
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
+        refetch: refetchInfinite,
     } = useBookingsInfinite({
         slot: slot === "ALL" ? undefined : slot,
+        status: statusFilter === "ALL" ? undefined : statusFilter,
+        isAssigned: assignFilter === "ALL" ? undefined : assignFilter === "ASSIGNED" ? "true" : "false",
+        paymentStatus: paymentFilter === "ALL" ? undefined : paymentFilter,
     });
 
     const mobileBookings: BookingListItem[] =
@@ -80,7 +87,19 @@ export const BookingsPage = () => {
         page,
         limit: 10,
         slot: slot === "ALL" ? undefined : slot,
+        status: statusFilter === "ALL" ? undefined : statusFilter,
+        isAssigned: assignFilter === "ALL" ? undefined : assignFilter === "ASSIGNED" ? "true" : "false",
+        paymentStatus: paymentFilter === "ALL" ? undefined : paymentFilter,
     });
+
+    const refetchAll = () => {
+        refetch();
+        refetchInfinite();
+    };
+
+    const assignMutation = useAssignTechnician(refetchAll);
+    const paymentMutation = useUpdatePayment(refetchAll);
+    const statusMutation = useUpdateStatus(refetchAll);
 
     const desktopBookings: BookingListItem[] = data?.data ?? [];
 
@@ -165,12 +184,63 @@ export const BookingsPage = () => {
 
     return (
         <div className="flex flex-col gap-4">
-            {/* 🔹 SLOT TABS */}
-            <Tabs
-                tabs={slots.map((s) => ({ label: s, value: s }))}
-                value={slot}
-                onChange={(v) => setSlot(v)}
-            />
+            <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center w-full">
+                <div className="flex-1 w-full max-w-full overflow-hidden">
+                    {/* 🔹 SLOT TABS */}
+                    <Tabs
+                        tabs={slots.map((s) => ({ label: s, value: s }))}
+                        value={slot}
+                        onChange={(v) => setSlot(v)}
+                    />
+                </div>
+                <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto shrink-0">
+                    {/* Status Filter */}
+                    <select
+                        value={statusFilter}
+                        onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                        className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 h-9"
+                    >
+                        <option value="ALL">All Status</option>
+                        <option value="PENDING">Pending</option>
+                        <option value="ASSIGNED">Assigned</option>
+                        <option value="IN_PROGRESS">In Progress</option>
+                        <option value="COMPLETED">Completed</option>
+                        <option value="CANCELLED">Cancelled</option>
+                    </select>
+
+                    {/* Assign Filter */}
+                    <select
+                        value={assignFilter}
+                        onChange={(e) => { setAssignFilter(e.target.value); setPage(1); }}
+                        className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 h-9"
+                    >
+                        <option value="ALL">All (Assign)</option>
+                        <option value="UNASSIGNED">Unassigned</option>
+                        <option value="ASSIGNED">Assigned</option>
+                    </select>
+
+                    {/* Payment Filter */}
+                    <select
+                        value={paymentFilter}
+                        onChange={(e) => { setPaymentFilter(e.target.value); setPage(1); }}
+                        className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 h-9"
+                    >
+                        <option value="ALL">All Payment</option>
+                        <option value="UNPAID">Unpaid</option>
+                        <option value="PAID">Paid</option>
+                        <option value="FAILED">Failed</option>
+                        <option value="REFUND_INITIATED">Refund Init.</option>
+                        <option value="REFUNDED">Refunded</option>
+                    </select>
+
+                    <Button
+                        onClick={() => setAddOpen(true)}
+                        fullWidth={false}
+                    >
+                        + Add Booking
+                    </Button>
+                </div>
+            </div>
 
             {/* 📱 MOBILE LIST */}
             <div className="flex flex-col gap-3 lg:hidden">
@@ -230,7 +300,7 @@ export const BookingsPage = () => {
             {/* 🔄 REFRESH */}
             <Button
                 variant="ghost"
-                onClick={() => refetch()}
+                onClick={refetchAll}
                 loading={isFetching}
             >
                 Refresh
@@ -261,6 +331,12 @@ export const BookingsPage = () => {
                 open={statusOpen}
                 onClose={() => setStatusOpen(false)}
                 onSelect={handleStatusChange}
+            />
+
+            <AddBookingSheet
+                open={addOpen}
+                onClose={() => setAddOpen(false)}
+                onSuccess={refetchAll}
             />
         </div>
     );

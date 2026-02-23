@@ -37,10 +37,11 @@ router.patch(
     bookingController.updateBookingStatus
 );
 
-router.patch(
-    '/payment',
-    allowRoles(ADMIN),
-    bookingController.updatePayment
-);
+router.patch('/payment', allowRoles(ADMIN), bookingController.updatePayment);
+
+// Customer self-service
+router.patch('/my/cancel', allowRoles(CUSTOMER), bookingLimiter, bookingController.cancelBooking);
+router.patch('/my/refund', allowRoles(CUSTOMER), bookingLimiter, bookingController.requestRefund);
+router.patch('/my/edit', allowRoles(CUSTOMER), bookingLimiter, bookingController.updateBookingByCustomer);
 
 module.exports = router;

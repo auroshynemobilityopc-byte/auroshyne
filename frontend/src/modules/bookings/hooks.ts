@@ -5,6 +5,7 @@ import {
     updateBookingStatusApi,
     updatePaymentApi,
     getBookingByIdApi,
+    createBookingApi,
 } from "./api";
 import type { BookingListResponse } from "./types";
 
@@ -26,27 +27,47 @@ export const useBookings = (params: any) => {
     );
 };
 
-export const useAssignTechnician = () => {
+export const useCreateBooking = (onSuccess?: () => void) => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: createBookingApi,
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["bookings-infinite"] });
+            onSuccess?.();
+        },
+    });
+};
+
+export const useAssignTechnician = (onSuccess?: () => void) => {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: assignTechnicianApi,
-        onSuccess: () => qc.invalidateQueries({ queryKey: ["bookings"] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["bookings-infinite"] });
+            onSuccess?.();
+        },
     });
 };
 
-export const useUpdateStatus = () => {
+export const useUpdateStatus = (onSuccess?: () => void) => {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: updateBookingStatusApi,
-        onSuccess: () => qc.invalidateQueries({ queryKey: ["bookings"] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["bookings-infinite"] });
+            onSuccess?.();
+        },
     });
 };
 
-export const useUpdatePayment = () => {
+export const useUpdatePayment = (onSuccess?: () => void) => {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: updatePaymentApi,
-        onSuccess: () => qc.invalidateQueries({ queryKey: ["bookings"] }),
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["bookings-infinite"] });
+            onSuccess?.();
+        },
     });
 };
 

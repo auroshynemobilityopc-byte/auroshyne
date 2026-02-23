@@ -14,8 +14,11 @@ export const BookingCard: React.FC<Props> = ({ booking }) => {
     return (
         <Card clickable onClick={() => navigate(`/admin/bookings/${booking.bookingId}`)}
             className="flex flex-col gap-2">
-            <div className="flex justify-between">
-                <p className="font-medium">{booking.customer.name}</p>
+            <div className="flex justify-between items-start">
+                <div>
+                    <p className="font-medium">{booking.userId?.name || booking.customer.name}</p>
+                    <p className="text-xs text-zinc-400">{booking.userId?.mobile || booking.customer.mobile}</p>
+                </div>
                 <Badge>{booking.status}</Badge>
             </div>
 

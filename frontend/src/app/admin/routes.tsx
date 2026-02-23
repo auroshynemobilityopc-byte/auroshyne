@@ -13,12 +13,11 @@ import { UsersPage } from "../../modules/users/pages/UsersPage";
 import { ProfilePage } from "../../modules/users/pages/ProfilePage";
 import { BookingDetailsPage } from "../../modules/bookings/pages/BookingDetailsPage";
 import { InvoicePage } from "../../modules/invoices/pages/InvoicePage";
-import TestBookingPage from "../../TestBookingPage";
 
 export const adminRoutes = createBrowserRouter([
     {
         path: "/",
-        element: <TestBookingPage />
+        element: <Navigate to="/admin" replace />
     },
     {
         path: "/admin/login",

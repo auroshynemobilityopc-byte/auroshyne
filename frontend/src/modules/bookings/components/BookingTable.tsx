@@ -97,8 +97,13 @@ export const BookingTable: React.FC<Props> = ({
                                 }
                                 className="border-t border-zinc-800 hover:bg-zinc-800/40 cursor-pointer transition-all duration-150"
                             >
-                                <td className="p-3 font-medium text-zinc-100">
-                                    {b.customer.name}
+                                <td className="p-3">
+                                    <div className="font-medium text-zinc-100">
+                                        {b.userId?.name || b.customer.name}
+                                    </div>
+                                    <div className="text-xs text-zinc-500">
+                                        {b.userId?.mobile || b.customer.mobile}
+                                    </div>
                                 </td>
 
                                 <td className="p-3 text-zinc-400">

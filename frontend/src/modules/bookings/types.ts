@@ -20,6 +20,10 @@ export interface BookingListItem {
         name: string;
         mobile: string;
     };
+    userId?: {
+        name: string;
+        mobile: string;
+    };
     date: string;
     slot: Slot;
     status: BookingStatus;

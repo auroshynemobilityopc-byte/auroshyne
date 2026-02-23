@@ -83,6 +83,26 @@ exports.getSlotBookings = asyncHandler(async (req, res) => {
 
 exports.getMyBookings = asyncHandler(async (req, res) => {
     const data = await bookingService.getMyBookings(req.user._id);
+    res.status(200).json({ success: true, data });
+});
 
+exports.cancelBooking = asyncHandler(async (req, res) => {
+    const { bookingId } = req.body;
+    if (!bookingId) throw new AppError('bookingId is required', 400);
+    const data = await bookingService.cancelBooking(bookingId, req.user._id);
+    res.status(200).json({ success: true, data });
+});
+
+exports.requestRefund = asyncHandler(async (req, res) => {
+    const { bookingId, reason } = req.body;
+    if (!bookingId) throw new AppError('bookingId is required', 400);
+    const data = await bookingService.requestRefund(bookingId, req.user._id, reason);
+    res.status(200).json({ success: true, data });
+});
+
+exports.updateBookingByCustomer = asyncHandler(async (req, res) => {
+    const { bookingId, ...updates } = req.body;
+    if (!bookingId) throw new AppError('bookingId is required', 400);
+    const data = await bookingService.updateBookingByCustomer(bookingId, req.user._id, updates);
     res.status(200).json({ success: true, data });
 });

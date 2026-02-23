@@ -4,6 +4,7 @@ const vehicleDTO = Joi.object({
     type: Joi.string().valid('2W', '4W', 'CAB').required(),
     number: Joi.string().required(),
     model: Joi.string().allow(''),
+    cc: Joi.string().allow(''),
     serviceId: Joi.string().required(),
     addons: Joi.array().items(Joi.string()),
 });
@@ -15,6 +16,9 @@ exports.createBookingDTO = Joi.object({
         address: Joi.string().required(),
         apartmentName: Joi.string().allow(''),
     }).required(),
+
+    category: Joi.string().valid('private', 'commercial').allow('', null),
+    paymentMode: Joi.string().valid('online', 'cash', 'upi').allow('', null),
 
     vehicles: Joi.array().items(vehicleDTO).min(1).required(),
 

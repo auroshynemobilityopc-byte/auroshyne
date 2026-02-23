@@ -1,0 +1,19 @@
+﻿src/app/customer/routes.tsx(4,29): error TS2307: Cannot find module '../../modules/customer/pages/WelcomePage' or its corresponding type declarations.
+src/app/customer/routes.tsx(5,10): error TS2614: Module '"../../modules/customer/auth/pages/LoginPage"' has no exported member 'LoginPage'. Did you mean to use 'import LoginPage from "../../modules/customer/auth/pages/LoginPage"' instead?
+src/app/customer/routes.tsx(6,10): error TS2614: Module '"../../modules/customer/auth/pages/RegisterPage"' has no exported member 'RegisterPage'. Did you mean to use 'import RegisterPage from "../../modules/customer/auth/pages/RegisterPage"' instead?
+src/app/customer/routes.tsx(7,36): error TS2307: Cannot find module '../../modules/customer/auth/pages/ChangePasswordPage' or its corresponding type declarations.
+src/app/customer/routes.tsx(8,32): error TS2307: Cannot find module '../../modules/customer/bookings/pages/MyBookingsPage' or its corresponding type declarations.
+src/app/customer/routes.tsx(9,41): error TS2307: Cannot find module '../../modules/customer/bookings/pages/BookingConfirmationPage' or its corresponding type declarations.
+src/app/customer/routes.tsx(10,35): error TS2307: Cannot find module '../../modules/customer/bookings/pages/BookingWizardPage' or its corresponding type declarations.
+src/modules/customer/booking/pages/BookingPage.tsx(3,83): error TS6133: 'CreditCard' is declared but its value is never read.
+src/modules/customer/home/pages/HomePage.tsx(4,26): error TS2307: Cannot find module '@/lib/utils' or its corresponding type declarations.
+src/modules/customer/home/pages/HomePage.tsx(102,44): error TS7006: Parameter 'service' implicitly has an 'any' type.
+src/modules/customer/home/pages/HomePage.tsx(102,53): error TS7006: Parameter 'i' implicitly has an 'any' type.
+src/modules/customer/lib/utils.ts(2,25): error TS2307: Cannot find module 'tailwind-merge' or its corresponding type declarations.
+src/modules/customer/shared/components/Layout.tsx(1,51): error TS6133: 'LogOut' is declared but its value is never read.
+src/modules/customer/shared/components/Layout.tsx(1,66): error TS6133: 'Menu' is declared but its value is never read.
+src/modules/customer/shared/components/Layout.tsx(1,72): error TS6133: 'X' is declared but its value is never read.
+src/modules/customer/shared/components/Layout.tsx(3,20): error TS2307: Cannot find module '@/lib/utils' or its corresponding type declarations.
+src/modules/customer/shared/components/Layout.tsx(4,18): error TS6133: 'AnimatePresence' is declared but its value is never read.
+src/modules/customer/shared/components/Layout.tsx(9,10): error TS6133: 'isMobileMenuOpen' is declared but its value is never read.
+src/modules/customer/shared/components/Layout.tsx(9,28): error TS6133: 'setIsMobileMenuOpen' is declared but its value is never read.

@@ -2,6 +2,20 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 const { ADMIN, TECHNICIAN, CUSTOMER } = require('../../common/constants/roles');
 
+const savedAddressSchema = new mongoose.Schema({
+    label: { type: String, required: true, trim: true },  // e.g. "Home", "Office"
+    address: { type: String, required: true, trim: true },
+    apartmentName: { type: String, trim: true, default: '' },
+    mobile: { type: String, trim: true, default: '' },
+}, { _id: true, timestamps: false });
+
+const savedVehicleSchema = new mongoose.Schema({
+    label: { type: String, trim: true, default: '' },            // e.g. "My Bike"
+    number: { type: String, required: true, trim: true, uppercase: true },
+    type: { type: String, enum: ['2W', '4W', 'CAB'], required: true },
+    model: { type: String, trim: true, default: '' },
+}, { _id: true, timestamps: false });
+
 const userSchema = new mongoose.Schema(
     {
         name: { type: String, required: true, trim: true },
@@ -43,6 +57,8 @@ const userSchema = new mongoose.Schema(
             type: Date,
             default: null,
         },
+        savedAddresses: { type: [savedAddressSchema], default: [] },
+        savedVehicles: { type: [savedVehicleSchema], default: [] },
     },
     { timestamps: true }
 );

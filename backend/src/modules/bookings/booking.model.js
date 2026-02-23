@@ -5,6 +5,7 @@ const vehicleSchema = new mongoose.Schema(
         type: { type: String, enum: ['2W', '4W', 'CAB'], required: true },
         number: { type: String, required: true },
         model: { type: String },
+        cc: { type: String, default: "" },
         serviceId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Service',
@@ -25,6 +26,11 @@ const bookingSchema = new mongoose.Schema(
             ref: 'User',
             required: true,
             index: true,
+        },
+
+        category: {
+            type: String,
+            enum: ['private', 'commercial']
         },
 
         customer: {
