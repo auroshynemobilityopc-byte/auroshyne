@@ -34,7 +34,6 @@ const setupManifest = () => {
  */
 const setupServiceWorkers = () => {
   registerSW({
-    scope: isAppAdmin ? "/admin" : "/",
     onNeedRefresh() {
       console.log(`[${isAppAdmin ? "Admin" : "Customer"} PWA] New version available`);
     },
@@ -106,14 +105,14 @@ if (typeof window !== "undefined") {
   const originalPushState = window.history.pushState;
   const originalReplaceState = window.history.replaceState;
 
-  window.history.pushState = function (...args: any[]) {
-    originalPushState.apply(window.history, args);
+  window.history.pushState = function (data: any, unused: string, url?: string | URL | null) {
+    originalPushState.call(window.history, data, unused, url);
     updateManifestOnNavigation();
     return;
   };
 
-  window.history.replaceState = function (...args: any[]) {
-    originalReplaceState.apply(window.history, args);
+  window.history.replaceState = function (data: any, unused: string, url?: string | URL | null) {
+    originalReplaceState.call(window.history, data, unused, url);
     updateManifestOnNavigation();
     return;
   };

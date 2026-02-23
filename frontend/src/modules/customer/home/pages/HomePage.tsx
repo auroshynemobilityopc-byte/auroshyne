@@ -116,7 +116,7 @@ export default function HomePage() {
                     </div>
 
                     <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-3 md:gap-8">
-                        {SERVICES.slice(0, 3).map((service: any, i) => (
+                        {SERVICES.slice(0, 3).map((service: any, i: number) => (
                             <motion.div
                                 key={service._id}
                                 initial={{ opacity: 0, y: 20 }}
