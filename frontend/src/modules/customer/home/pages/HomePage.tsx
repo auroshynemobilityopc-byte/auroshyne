@@ -24,8 +24,8 @@ export default function HomePage() {
     return (
         <div className="pb-20 md:pb-0">
             {/* ================= HERO SECTION ================= */}
-            <section className="relative h-[400px] md:h-[600px] overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-b from-brand-blue/20 to-charcoal-900 z-10 md:bg-gradient-to-r md:from-charcoal-900 md:via-charcoal-900/80 md:to-transparent" />
+            <section className="relative h-100 md:h-150 overflow-hidden">
+                <div className="absolute inset-0 bg-linear-to-b from-brand-blue/20 to-charcoal-900 z-10 md:bg-linear-to-r md:from-charcoal-900 md:via-charcoal-900/80 md:to-transparent" />
                 <img
                     src="https://images.unsplash.com/photo-1601362840469-51e4d8d58785?q=80&w=2000&auto=format&fit=crop"
                     alt="Car Detailing"
@@ -116,7 +116,7 @@ export default function HomePage() {
                     </div>
 
                     <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-3 md:gap-8">
-                        {SERVICES.slice(0, 3).map((service: any, i) => (
+                        {SERVICES.slice(0, 3).map((service: any, i: number) => (
                             <motion.div
                                 key={service._id}
                                 initial={{ opacity: 0, y: 20 }}
@@ -124,7 +124,7 @@ export default function HomePage() {
                                 transition={{ delay: i * 0.1 }}
                                 className="bg-charcoal-800 rounded-2xl p-1 md:p-0 overflow-hidden flex md:flex-col border border-white/5 hover:border-brand-blue/30 transition-all group"
                             >
-                                <div className="w-24 h-24 md:w-full md:h-64 bg-charcoal-900 rounded-xl md:rounded-none flex-shrink-0 relative overflow-hidden">
+                                <div className="w-24 h-24 md:w-full md:h-64 bg-charcoal-900 rounded-xl md:rounded-none shrink-0 relative overflow-hidden">
                                     <img
                                         src={`https://source.unsplash.com/random/800x600?car-wash&sig=${i}`}
                                         alt={service.name}
@@ -133,7 +133,7 @@ export default function HomePage() {
                                             (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1520340356584-f9917d1eea6f?w=800&h=600&fit=crop";
                                         }}
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-charcoal-900 to-transparent opacity-60" />
+                                    <div className="absolute inset-0 bg-linear-to-t from-charcoal-900 to-transparent opacity-60" />
                                 </div>
                                 <div className="p-3 md:p-6 flex flex-col justify-center flex-1">
                                     <h3 className="font-bold text-white mb-1 md:text-xl md:mb-3">{service.name}</h3>
@@ -184,7 +184,7 @@ export default function HomePage() {
                                 { title: "100% Satisfaction", desc: "If you're not happy, we'll re-do it for free." }
                             ].map((item, i) => (
                                 <div key={i} className="flex gap-4">
-                                    <div className="w-12 h-12 rounded-full bg-brand-blue/10 flex items-center justify-center flex-shrink-0">
+                                    <div className="w-12 h-12 rounded-full bg-brand-blue/10 flex items-center justify-center shrink-0">
                                         <CheckCircle2 className="w-6 h-6 text-brand-blue" />
                                     </div>
                                     <div>
@@ -208,7 +208,7 @@ export default function HomePage() {
 
             {/* ================= CTA ================= */}
             <section className="p-6 pt-0 md:py-20">
-                <div className="max-w-7xl mx-auto bg-gradient-to-r from-brand-blue to-brand-accent rounded-3xl p-6 md:p-16 text-center md:text-left relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8">
+                <div className="max-w-7xl mx-auto bg-linear-to-r from-brand-blue to-brand-accent rounded-3xl p-6 md:p-16 text-center md:text-left relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-8">
                     <div className="relative z-10 max-w-2xl">
                         <h2 className="text-2xl md:text-4xl font-bold mb-2 md:mb-4">Apartment or Society Booking?</h2>
                         <p className="text-white/80 text-sm md:text-xl mb-4 md:mb-0">Get special bulk discounts for your society. We organize dedicated camps for apartments.</p>
