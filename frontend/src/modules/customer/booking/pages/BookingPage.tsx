@@ -131,7 +131,7 @@ export default function BookingPage() {
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
                             transition={{ duration: 0.2 }}
-                            className="min-h-[400px]"
+                            className="min-h-100"
                         >
                             {renderStep()}
                         </motion.div>
