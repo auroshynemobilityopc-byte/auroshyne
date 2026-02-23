@@ -55,37 +55,37 @@ bootstrapAuth();
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <OfflineProvider>
-      <QueryClientProvider client={queryClient}>
-        {isAppAdmin ? (
-          <RouterProvider router={adminRoutes} />
-        ) : (
+    <QueryClientProvider client={queryClient}>
+      {isAppAdmin ? (
+        <RouterProvider router={adminRoutes} />
+      ) : (
+        <OfflineProvider>
           <CustomerAuthProvider>
             <RouterProvider router={customerRoutes} />
           </CustomerAuthProvider>
-        )}
-        <Toaster
-          position="top-center"
-          toastOptions={{
-            style: {
-              background: '#1f2937',
-              color: '#fff',
-              border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: '12px',
-              fontSize: '14px',
-            },
-            error: {
-              iconTheme: { primary: '#ef4444', secondary: '#fff' },
-              duration: 4000,
-            },
-            success: {
-              iconTheme: { primary: '#22c55e', secondary: '#fff' },
-              duration: 3000,
-            },
-          }}
-        />
-      </QueryClientProvider>
-    </OfflineProvider>
+        </OfflineProvider>
+      )}
+      <Toaster
+        position="top-center"
+        toastOptions={{
+          style: {
+            background: '#1f2937',
+            color: '#fff',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '12px',
+            fontSize: '14px',
+          },
+          error: {
+            iconTheme: { primary: '#ef4444', secondary: '#fff' },
+            duration: 4000,
+          },
+          success: {
+            iconTheme: { primary: '#22c55e', secondary: '#fff' },
+            duration: 3000,
+          },
+        }}
+      />
+    </QueryClientProvider>
   </React.StrictMode>
 );
 
