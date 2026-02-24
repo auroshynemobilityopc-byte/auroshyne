@@ -1,4 +1,4 @@
-import { Clock, MapPin, UserCheck } from "lucide-react";
+import { Clock, MapPin, UserCheck, WifiOff } from "lucide-react";
 import { cn } from "../../lib/utils";
 import { format } from "date-fns";
 import { useMyBookings, useServices, useAddons } from "../../booking/hooks";
@@ -27,7 +27,15 @@ export default function HistoryPage() {
   }, [bookings, activeTab]);
 
   if (isLoading) return <div className="p-6 pb-24 text-center mt-12">Loading history...</div>;
-  if (isError) return <div className="p-6 pb-24 text-center mt-12 text-red-500">Failed to load history.</div>;
+  if (isError) return (
+    <div className="p-6 pb-24 flex flex-col items-center justify-center mt-12 gap-3">
+      <WifiOff className="w-10 h-10 text-zinc-500" />
+      <p className="text-zinc-400 text-sm text-center">
+        You're offline and no cached booking history was found.<br />
+        Connect to the internet and open this page once to enable offline access.
+      </p>
+    </div>
+  );
 
   return (
     <div className="p-6 pb-24 md:max-w-7xl md:mx-auto w-full">

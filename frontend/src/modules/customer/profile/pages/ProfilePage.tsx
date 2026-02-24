@@ -1,15 +1,24 @@
-import { User as UserIcon, Phone, LogOut, ChevronRight, Bell, Shield, HelpCircle } from "lucide-react";
+import { User as UserIcon, Phone, LogOut, ChevronRight, Bell, Shield, HelpCircle, WifiOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMyProfile, useLogout } from "../hooks";
 
 export default function ProfilePage() {
     const navigate = useNavigate();
-    const { data: profileResult, isLoading } = useMyProfile();
+    const { data: profileResult, isLoading, isError } = useMyProfile();
     const { mutate: logout, isPending: isLoggingOut } = useLogout();
 
     const user = profileResult?.data;
 
     if (isLoading) return <div className="p-6 text-center mt-12">Loading profile...</div>;
+    if (isError) return (
+        <div className="p-6 pb-24 flex flex-col items-center justify-center mt-12 gap-3">
+            <WifiOff className="w-10 h-10 text-zinc-500" />
+            <p className="text-zinc-400 text-sm text-center">
+                You're offline and no cached profile was found.<br />
+                Connect to the internet and open this page once to enable offline access.
+            </p>
+        </div>
+    );
 
     return (
         <div className="pb-24 md:max-w-3xl md:mx-auto w-full">
