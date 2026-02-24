@@ -1,11 +1,14 @@
 import { User as UserIcon, Phone, LogOut, ChevronRight, Bell, Shield, HelpCircle, WifiOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useMyProfile, useLogout } from "../hooks";
+import { useUnreadCount } from "../../notifications/hooks";
 
 export default function ProfilePage() {
     const navigate = useNavigate();
     const { data: profileResult, isLoading, isError } = useMyProfile();
     const { mutate: logout, isPending: isLoggingOut } = useLogout();
+    const { data: unreadData } = useUnreadCount();
+    const unreadCount = unreadData?.unreadCount ?? 0;
 
     const user = profileResult?.data;
 
@@ -46,7 +49,6 @@ export default function ProfilePage() {
                         {[
                             { icon: UserIcon, label: "Edit Profile", onClick: () => navigate("/edit-profile") },
                             { icon: MapPin, label: "Saved Addresses", onClick: () => navigate("/saved") },
-                            { icon: Bell, label: "Notifications", onClick: () => { } },
                         ].map((item, i) => (
                             <button key={i} onClick={item.onClick} className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0">
                                 <div className="flex items-center gap-3">
@@ -56,6 +58,23 @@ export default function ProfilePage() {
                                 <ChevronRight className="w-4 h-4 text-text-grey" />
                             </button>
                         ))}
+
+                        {/* Notifications — with live unread badge */}
+                        <button
+                            onClick={() => navigate("/notifications")}
+                            className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <Bell className="w-5 h-5 text-text-grey" />
+                                <span className="font-medium">Notifications</span>
+                                {unreadCount > 0 && (
+                                    <span className="ml-1 min-w-[20px] h-5 px-1.5 rounded-full bg-brand-blue text-white text-[10px] font-bold flex items-center justify-center">
+                                        {unreadCount > 99 ? "99+" : unreadCount}
+                                    </span>
+                                )}
+                            </div>
+                            <ChevronRight className="w-4 h-4 text-text-grey" />
+                        </button>
                     </div>
                 </section>
 

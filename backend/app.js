@@ -12,6 +12,7 @@ const paymentRoutes = require('./src/modules/payments/payment.routes');
 const invoiceRoutes = require('./src/modules/invoices/invoice.routes');
 const dashboardRoutes = require('./src/modules/dashboard/dashboard.routes');
 const technicianJobsRoutes = require('./src/modules/technicians/jobs/technicianJobs.routes');
+const notificationRoutes = require('./src/modules/notifications/notification.routes');
 
 const errorHandler = require('./src/common/middleware/error.middleware');
 const { globalLimiter } = require('./src/common/middleware/rateLimit.middleware');
@@ -76,6 +77,7 @@ app.use('/payments', paymentRoutes);
 app.use('/invoices', invoiceRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/technician-jobs', technicianJobsRoutes);
+app.use('/notifications', notificationRoutes);
 
 app.use(errorHandler);
 

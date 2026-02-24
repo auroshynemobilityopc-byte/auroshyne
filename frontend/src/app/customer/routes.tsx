@@ -9,6 +9,7 @@ import HistoryPage from "../../modules/customer/history/pages/HistoryPage";
 import ProfilePage from "../../modules/customer/profile/pages/ProfilePage";
 import EditProfilePage from "../../modules/customer/profile/pages/EditProfilePage";
 import SavedDataPage from "../../modules/customer/profile/pages/SavedDataPage";
+import NotificationsPage from "../../modules/customer/notifications/pages/NotificationsPage";
 
 // Deleted dummy component
 
@@ -47,6 +48,7 @@ export const customerRoutes = createBrowserRouter([
                     { path: "/edit-profile", element: <EditProfilePage /> },
                     { path: "/saved", element: <SavedDataPage /> },
                     { path: "/change-password", element: <div className="p-4 text-white">Change Password</div> },
+                    { path: "/notifications", element: <NotificationsPage /> },
 
                     // Bookings Engine
                     { path: "/bookings", element: <BookingPage /> },

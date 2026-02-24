@@ -5,6 +5,7 @@ const Addon = require('../addons/addon.model');
 const Technician = require('../technicians/technician.model');
 const slotConfig = require('../../config/slot.config');
 const { AppError } = require('../../common/utils/appError');
+const notificationService = require('../notifications/notification.service');
 
 const calculateVehiclePrice = async (vehicle) => {
     const service = await Service.findById(vehicle.serviceId).lean();
@@ -157,6 +158,20 @@ exports.assignTechnician = async ({ bookingId, technicianId }) => {
 
     await technician.save();
     await booking.save();
+
+    // 🔔 Notify the customer that a technician has been assigned
+    // We fire-and-forget so a notification failure never blocks the response.
+    notificationService
+        .notifyTechnicianAssigned({
+            userId: booking.userId,
+            bookingId: booking.bookingId,
+            technicianName: technician.name,
+            date: booking.date,
+            slot: booking.slot,
+        })
+        .catch((err) =>
+            console.error('[Notification] Failed to create technician-assigned notification:', err.message)
+        );
 
     return booking;
 };

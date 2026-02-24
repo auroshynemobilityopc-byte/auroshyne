@@ -1,7 +1,8 @@
-import { Home, Calendar, History, User, Settings, Phone } from "lucide-react";
+import { Home, Calendar, History, User, Phone } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "../../lib/utils";
 import { motion } from "motion/react";
+import { NotificationBell } from "../../notifications/components/NotificationBell";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
@@ -52,11 +53,12 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <a href="tel:+919346748605" className="flex items-center gap-2 text-sm font-medium text-text-grey hover:text-white transition-colors">
             <Phone className="w-4 h-4" />
             <span>Support</span>
           </a>
+          <NotificationBell />
           <Link
             to="/bookings"
             className="bg-brand-blue hover:bg-brand-accent text-white px-5 py-2.5 rounded-lg font-bold text-sm transition-all shadow-lg shadow-brand-blue/20 hover:shadow-brand-blue/40"
@@ -77,9 +79,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <p className="text-[10px] text-brand-blue font-medium tracking-wider uppercase">Mobility</p>
           </div>
         </div>
-        <Link to="/profile" className="p-2 hover:bg-white/5 rounded-full transition-colors">
-          <Settings className="w-5 h-5 text-text-grey" />
-        </Link>
+        <NotificationBell />
       </header>
 
       {/* ================= MAIN CONTENT ================= */}

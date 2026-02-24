@@ -79,12 +79,11 @@ define(['./workbox-f9d29cf2'], (function (workbox) { 'use strict';
    */
   workbox.precacheAndRoute([{
     "url": "/index.html",
-    "revision": "0.4re1kdg61f"
+    "revision": "0.eja8d2gpjbg"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("/index.html"), {
-    allowlist: [/^\/$/],
-    denylist: [/^\/admin/]
+    allowlist: [/^\/$/]
   }));
   workbox.registerRoute(/^\/(?!admin).*\/(api\/(bookings|services|profile|history)).*/i, new workbox.NetworkFirst({
     "cacheName": "customer-api-stale-cache",
