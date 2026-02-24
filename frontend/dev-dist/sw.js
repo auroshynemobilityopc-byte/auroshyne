@@ -67,7 +67,7 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-1cff22dc'], (function (workbox) { 'use strict';
+define(['./workbox-f9d29cf2'], (function (workbox) { 'use strict';
 
   self.skipWaiting();
   workbox.clientsClaim();
@@ -79,14 +79,15 @@ define(['./workbox-1cff22dc'], (function (workbox) { 'use strict';
    */
   workbox.precacheAndRoute([{
     "url": "/index.html",
-    "revision": "0.v4299rtg648"
+    "revision": "0.4re1kdg61f"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("/index.html"), {
-    allowlist: [/^\/$/]
+    allowlist: [/^\/$/],
+    denylist: [/^\/admin/]
   }));
-  workbox.registerRoute(/^.*\/api\/(bookings|customers|services|dashboard).*/i, new workbox.NetworkFirst({
-    "cacheName": "api-stale-cache",
+  workbox.registerRoute(/^\/(?!admin).*\/(api\/(bookings|services|profile|history)).*/i, new workbox.NetworkFirst({
+    "cacheName": "customer-api-stale-cache",
     "networkTimeoutSeconds": 3,
     plugins: [new workbox.ExpirationPlugin({
       maxEntries: 100,
@@ -95,16 +96,53 @@ define(['./workbox-1cff22dc'], (function (workbox) { 'use strict';
       statuses: [0, 200]
     })]
   }), 'GET');
-  workbox.registerRoute(/^.*\/api\/.*/i, new workbox.NetworkOnly({
-    "cacheName": "api-network-only-post",
+  workbox.registerRoute(/^\/$/, new workbox.CacheFirst({
+    "cacheName": "customer-home-page",
+    plugins: [new workbox.ExpirationPlugin({
+      maxEntries: 5,
+      maxAgeSeconds: 86400
+    })]
+  }), 'GET');
+  workbox.registerRoute(/^\/history/, new workbox.NetworkFirst({
+    "cacheName": "customer-history-page",
+    "networkTimeoutSeconds": 5,
+    plugins: [new workbox.ExpirationPlugin({
+      maxEntries: 10,
+      maxAgeSeconds: 43200
+    })]
+  }), 'GET');
+  workbox.registerRoute(/^\/(?!admin).*\/api\/.*/i, new workbox.NetworkOnly({
+    "cacheName": "customer-api-post",
     plugins: []
   }), 'POST');
-  workbox.registerRoute(/^.*\/api\/.*/i, new workbox.NetworkOnly({
-    "cacheName": "api-network-only-patch",
+  workbox.registerRoute(/^\/(?!admin).*\/api\/.*/i, new workbox.NetworkOnly({
+    "cacheName": "customer-api-patch",
     plugins: []
   }), 'PATCH');
-  workbox.registerRoute(/^.*\/api\/.*/i, new workbox.NetworkOnly({
-    "cacheName": "api-network-only-delete",
+  workbox.registerRoute(/^\/(?!admin).*\/api\/.*/i, new workbox.NetworkOnly({
+    "cacheName": "customer-api-delete",
+    plugins: []
+  }), 'DELETE');
+  workbox.registerRoute(/^\/admin\/.*\/api\/(bookings|customers|services|dashboard|technicians).*/i, new workbox.NetworkFirst({
+    "cacheName": "admin-api-stale-cache",
+    "networkTimeoutSeconds": 3,
+    plugins: [new workbox.ExpirationPlugin({
+      maxEntries: 100,
+      maxAgeSeconds: 604800
+    }), new workbox.CacheableResponsePlugin({
+      statuses: [0, 200]
+    })]
+  }), 'GET');
+  workbox.registerRoute(/^\/admin\/.*\/api\/.*/i, new workbox.NetworkOnly({
+    "cacheName": "admin-api-post",
+    plugins: []
+  }), 'POST');
+  workbox.registerRoute(/^\/admin\/.*\/api\/.*/i, new workbox.NetworkOnly({
+    "cacheName": "admin-api-patch",
+    plugins: []
+  }), 'PATCH');
+  workbox.registerRoute(/^\/admin\/.*\/api\/.*/i, new workbox.NetworkOnly({
+    "cacheName": "admin-api-delete",
     plugins: []
   }), 'DELETE');
 

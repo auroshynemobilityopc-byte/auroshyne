@@ -18,7 +18,10 @@ export default defineConfig({
       maximumFileSizeToCacheInBytes: 5000000,
       globPatterns: ["**/*.{js,css,html,ico,png,svg,json}"],
       navigateFallback: "/index.html",
-      navigateFallbackDenylist: [/^\/admin/],
+      // Allow ALL routes (including /admin) to fall back to index.html when offline.
+      // Both customer (/) and admin (/admin) are the same SPA shell — the app
+      // detects which to render via window.location.pathname in main.tsx.
+      navigateFallbackAllowlist: [/^\/.*/],
       runtimeCaching: [
         // ========== CUSTOMER APP CACHING (/) ==========
         {
