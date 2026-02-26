@@ -40,10 +40,26 @@ export default function BookingSummary({ booking, services = [], totalEstimate =
                     </div>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-white/10">
+                <div className="mt-6 pt-4 border-t border-white/10 space-y-3">
                     <div className="flex justify-between items-center">
-                        <span className="font-bold">Total Estimate</span>
-                        <span className="font-bold text-xl text-brand-blue">₹{totalEstimate}</span>
+                        <span className="text-text-grey">Subtotal</span>
+                        <span className="font-medium">₹{totalEstimate}</span>
+                    </div>
+
+                    {booking.discountValue > 0 && (
+                        <div className="flex justify-between items-center text-emerald-400">
+                            <span className="font-medium flex items-center gap-1">
+                                Discount <span className="text-xs px-2 py-0.5 bg-emerald-500/10 rounded-full font-bold uppercase">{booking.discountCode}</span>
+                            </span>
+                            <span className="font-bold">- ₹{booking.discountValue.toFixed(2)}</span>
+                        </div>
+                    )}
+
+                    <div className="flex justify-between items-center pt-3 border-t border-white/5">
+                        <span className="font-bold text-lg text-white">Final Total</span>
+                        <span className="font-bold text-xl text-brand-blue">
+                            ₹{(totalEstimate - (booking.discountValue || 0)).toFixed(2).replace(/\.00$/, '')}
+                        </span>
                     </div>
                 </div>
             </div>

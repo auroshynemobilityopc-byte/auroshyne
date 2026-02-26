@@ -27,6 +27,7 @@ exports.createBookingDTO = Joi.object({
         .required(),
 
     date: Joi.string().required(),
+    discountCode: Joi.string().allow('', null).optional(),
 });
 
 exports.bulkBookingDTO = Joi.object({

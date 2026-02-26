@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     useAssignTechnician,
     useBookings,
@@ -6,6 +6,7 @@ import {
     useUpdatePayment,
     useUpdateStatus,
 } from "../hooks";
+
 import type {
     BookingListItem,
     BookingStatus,
@@ -23,12 +24,19 @@ import { StatusActions } from "../components/StatusActions";
 import { UpiTxnDrawer } from "../components/UpiTxnDrawer";
 import { AddBookingSheet } from "../components/AddBookingSheet";
 
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import clsx from "clsx";
+
 export const BookingsPage = () => {
     const [page, setPage] = useState(1);
     const [slot, setSlot] = useState("ALL");
     const [statusFilter, setStatusFilter] = useState("ALL");
     const [assignFilter, setAssignFilter] = useState("ALL");
     const [paymentFilter, setPaymentFilter] = useState("ALL");
+
+    /* ✅ DATE STATE */
+    const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
 
     const [addOpen, setAddOpen] = useState(false);
 
@@ -38,12 +46,36 @@ export const BookingsPage = () => {
     const [paymentOpen, setPaymentOpen] = useState(false);
     const [statusOpen, setStatusOpen] = useState(false);
     const [upiOpen, setUpiOpen] = useState(false);
+    const [showFilters, setShowFilters] = useState(false);
 
     const [paymentStatus, setPaymentStatus] =
         useState<PaymentStatus>("UNPAID");
 
-
     const slots = ["ALL", "MORNING", "AFTERNOON", "EVENING"];
+
+    /* ✅ RESET PAGE WHEN FILTER CHANGES */
+    useEffect(() => {
+        setPage(1);
+    }, [slot, statusFilter, assignFilter, paymentFilter, selectedDate]);
+
+    /* ---------------- FILTER OBJECT ---------------- */
+    const filters = {
+        slot: slot === "ALL" ? undefined : slot,
+        status: statusFilter === "ALL" ? undefined : statusFilter,
+        isAssigned:
+            assignFilter === "ALL"
+                ? undefined
+                : assignFilter === "ASSIGNED"
+                    ? "true"
+                    : "false",
+        paymentStatus:
+            paymentFilter === "ALL" ? undefined : paymentFilter,
+
+        /* ✅ SEND DATE IN YYYY-MM-DD FORMAT */
+        date: selectedDate
+            ? selectedDate.toISOString().split("T")[0]
+            : undefined,
+    };
 
     /* ---------------- ACTION OPENERS ---------------- */
 
@@ -65,32 +97,24 @@ export const BookingsPage = () => {
 
     /* ---------------- DATA QUERIES ---------------- */
 
-    /** 📱 MOBILE → infinite */
     const {
         data: infiniteData,
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
         refetch: refetchInfinite,
-    } = useBookingsInfinite({
-        slot: slot === "ALL" ? undefined : slot,
-        status: statusFilter === "ALL" ? undefined : statusFilter,
-        isAssigned: assignFilter === "ALL" ? undefined : assignFilter === "ASSIGNED" ? "true" : "false",
-        paymentStatus: paymentFilter === "ALL" ? undefined : paymentFilter,
-    });
+    } = useBookingsInfinite(filters);
 
     const mobileBookings: BookingListItem[] =
         infiniteData?.pages.flatMap((p) => p.data) ?? [];
 
-    /** 🖥 DESKTOP → paginated */
     const { data, refetch, isFetching } = useBookings({
         page,
         limit: 10,
-        slot: slot === "ALL" ? undefined : slot,
-        status: statusFilter === "ALL" ? undefined : statusFilter,
-        isAssigned: assignFilter === "ALL" ? undefined : assignFilter === "ASSIGNED" ? "true" : "false",
-        paymentStatus: paymentFilter === "ALL" ? undefined : paymentFilter,
+        ...filters,
     });
+
+    const desktopBookings: BookingListItem[] = data?.data ?? [];
 
     const refetchAll = () => {
         refetch();
@@ -101,9 +125,7 @@ export const BookingsPage = () => {
     const paymentMutation = useUpdatePayment(refetchAll);
     const statusMutation = useUpdateStatus(refetchAll);
 
-    const desktopBookings: BookingListItem[] = data?.data ?? [];
-
-    /* ---------------- MUTATION HANDLERS ---------------- */
+    /* ---------------- MUTATIONS ---------------- */
 
     const handleAssign = (technicianId: string) => {
         if (!selectedBookingId) return;
@@ -139,7 +161,6 @@ export const BookingsPage = () => {
     ) => {
         if (!selectedBookingId) return;
 
-        /** UPI → ask txn id */
         if (status === "PAID" && method === "UPI") {
             setPaymentOpen(false);
             setUpiOpen(true);
@@ -184,20 +205,52 @@ export const BookingsPage = () => {
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center w-full">
-                <div className="flex-1 w-full max-w-full overflow-hidden">
-                    {/* 🔹 SLOT TABS */}
+
+            {/* 🔷 TOOLBAR */}
+            <div className="flex flex-col gap-3">
+
+                {/* TOP ROW: DATE + TOGGLE */}
+                <div className="flex items-center gap-2">
+
+                    <DatePicker
+                        selected={selectedDate}
+                        onChange={(date: any) => setSelectedDate(date)}
+                        dateFormat="yyyy-MM-dd"
+                        portalId="root"
+                        popperClassName="z-[9999]"
+                        className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 h-9"
+                    />
+
+                    {/* TOGGLE BUTTON (mobile only) */}
+                    <Button
+                        variant="secondary"
+                        className="lg:hidden h-9 px-3 text-xs"
+                        onClick={() => setShowFilters((p) => !p)}
+                    >
+                        {showFilters ? "Hide Filters" : "Filters"}
+                    </Button>
+                </div>
+
+                {/* TABS FULL WIDTH */}
+                <div className="w-full [&>*]:w-full [&>*]:flex [&>*]:gap-1 [&>*_button]:flex-1 [&>*_button]:text-center [&>*_button]:!h-9 [&>*_button]:!text-xs">
                     <Tabs
                         tabs={slots.map((s) => ({ label: s, value: s }))}
                         value={slot}
                         onChange={(v) => setSlot(v)}
                     />
                 </div>
-                <div className="flex flex-wrap items-center gap-2 w-full lg:w-auto shrink-0">
-                    {/* Status Filter */}
+
+                {/* FILTERS + ADD */}
+                <div
+                    className={clsx(
+                        "flex flex-wrap items-center gap-2 justify-start md:justify-end",
+                        "lg:flex", // always visible on desktop
+                        showFilters ? "flex" : "hidden lg:flex" // toggle on mobile
+                    )}
+                >
                     <select
                         value={statusFilter}
-                        onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                        onChange={(e) => setStatusFilter(e.target.value)}
                         className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 h-9"
                     >
                         <option value="ALL">All Status</option>
@@ -208,21 +261,19 @@ export const BookingsPage = () => {
                         <option value="CANCELLED">Cancelled</option>
                     </select>
 
-                    {/* Assign Filter */}
                     <select
                         value={assignFilter}
-                        onChange={(e) => { setAssignFilter(e.target.value); setPage(1); }}
+                        onChange={(e) => setAssignFilter(e.target.value)}
                         className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 h-9"
                     >
-                        <option value="ALL">All (Assign)</option>
+                        <option value="ALL">All Assign</option>
                         <option value="UNASSIGNED">Unassigned</option>
                         <option value="ASSIGNED">Assigned</option>
                     </select>
 
-                    {/* Payment Filter */}
                     <select
                         value={paymentFilter}
-                        onChange={(e) => { setPaymentFilter(e.target.value); setPage(1); }}
+                        onChange={(e) => setPaymentFilter(e.target.value)}
                         className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-zinc-300 h-9"
                     >
                         <option value="ALL">All Payment</option>
@@ -235,7 +286,7 @@ export const BookingsPage = () => {
 
                     <Button
                         onClick={() => setAddOpen(true)}
-                        fullWidth={false}
+                        className="w-full sm:w-auto"
                     >
                         + Add Booking
                     </Button>
@@ -278,36 +329,41 @@ export const BookingsPage = () => {
                     onStatus={openStatus}
                 />
 
-                <div className="flex justify-between items-center mt-4">
-                    <Button
-                        variant="secondary"
-                        disabled={page === 1}
-                        onClick={() => setPage((p) => p - 1)}
-                    >
-                        Prev
-                    </Button>
+                <div className="flex justify-center mt-6">
+                    <div className="flex items-center gap-3 bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2">
 
-                    <Button
-                        variant="secondary"
-                        disabled={page === data?.pagination?.pages}
-                        onClick={() => setPage((p) => p + 1)}
-                    >
-                        Next
-                    </Button>
+                        <Button
+                            variant="secondary"
+                            disabled={page === 1}
+                            onClick={() => setPage((p) => p - 1)}
+                            className="px-3"
+                        >
+                            Prev
+                        </Button>
+
+                        <span className="text-sm text-zinc-400 min-w-[90px] text-center">
+                            Page {data?.pagination?.page || 1} / {data?.pagination?.pages || 1}
+                        </span>
+
+                        <Button
+                            variant="secondary"
+                            disabled={page === data?.pagination?.pages}
+                            onClick={() => setPage((p) => p + 1)}
+                            className="px-3"
+                        >
+                            Next
+                        </Button>
+
+                    </div>
                 </div>
             </div>
 
             {/* 🔄 REFRESH */}
-            <Button
-                variant="ghost"
-                onClick={refetchAll}
-                loading={isFetching}
-            >
+            <Button variant="ghost" onClick={refetchAll} loading={isFetching}>
                 Refresh
             </Button>
 
-            {/* ---------------- DRAWERS & SHEETS ---------------- */}
-
+            {/* DRAWERS */}
             <AssignTechnicianSheet
                 open={assignOpen}
                 onClose={() => setAssignOpen(false)}

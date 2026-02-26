@@ -7,5 +7,7 @@ export const getInvoiceApi = async (bookingId: string) => {
 };
 
 export const downloadInvoicePdfApi = async (downloadUrl: string) => {
+    // For Cloudinary URLs, just open them in a new tab. 
+    // The user can view/download the PDF using the browser's native PDF tools.
     window.open(downloadUrl, "_blank");
 };

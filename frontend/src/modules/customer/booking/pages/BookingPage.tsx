@@ -39,6 +39,8 @@ export default function BookingPage() {
         address: { house: "", street: "", mobile: "" },
         paymentMode: null,
         isBulkBooking: false,
+        discountCode: null,
+        discountValue: 0,
     });
 
     const nextStep = () => setStep((s) => Math.min(s + 1, 8) as BookingStep);
@@ -104,7 +106,7 @@ export default function BookingPage() {
     };
 
     return (
-        <div className="p-6 pb-32 md:pb-12 md:pt-12">
+        <div className="p-6 pb-48 md:pb-12 md:pt-12">
             <div className="md:grid md:grid-cols-12 md:gap-12">
 
                 {/* LEFT COLUMN: STEPS */}
@@ -186,7 +188,8 @@ export default function BookingPage() {
                                             addons: v.addonIds || []
                                         })),
                                         slot: booking.slotId.toUpperCase(),
-                                        date: format(booking.date, 'yyyy-MM-dd')
+                                        date: format(booking.date, 'yyyy-MM-dd'),
+                                        discountCode: booking.discountCode || undefined
                                     };
 
                                     createBooking(payload, {

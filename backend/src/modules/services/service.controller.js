@@ -24,7 +24,7 @@ exports.getServices = asyncHandler(async (req, res) => {
     const { error, value } = paginationDTO.validate(req.query);
     if (error) throw new AppError(error.details[0].message, 400);
 
-    const data = await serviceService.getServices(value, req.user.role);
+    const data = await serviceService.getServices(value, req.user?.role || 'CUSTOMER');
 
     res.status(200).json({
         success: true,
@@ -34,7 +34,7 @@ exports.getServices = asyncHandler(async (req, res) => {
 });
 
 exports.getServiceById = asyncHandler(async (req, res) => {
-    const data = await serviceService.getServiceById(req.params.id, req.user.role);
+    const data = await serviceService.getServiceById(req.params.id, req.user?.role || 'CUSTOMER');
 
     res.status(200).json({ success: true, data });
 });

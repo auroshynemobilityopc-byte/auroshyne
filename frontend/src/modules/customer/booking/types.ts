@@ -28,6 +28,8 @@ export interface BookingState {
     };
     paymentMode: "online" | "cash" | "upi" | null;
     isBulkBooking: boolean;
+    discountCode: string | null;
+    discountValue: number;
 }
 
 export interface StepProps {

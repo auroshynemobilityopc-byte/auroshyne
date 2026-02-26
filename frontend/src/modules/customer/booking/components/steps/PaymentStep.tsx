@@ -27,18 +27,6 @@ export default function PaymentStep({ booking, updateBooking }: StepProps) {
                     </button>
                 ))}
             </div>
-
-            <div className="pt-4">
-                <label className="text-sm text-text-grey mb-2 block">Coupon Code</label>
-                <div className="flex gap-2">
-                    <input
-                        type="text"
-                        placeholder="Enter code"
-                        className="flex-1 bg-charcoal-800 border border-white/10 rounded-xl p-3 text-white focus:border-brand-blue focus:outline-none"
-                    />
-                    <button className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-xl font-medium transition-colors">Apply</button>
-                </div>
-            </div>
         </div>
     );
 }

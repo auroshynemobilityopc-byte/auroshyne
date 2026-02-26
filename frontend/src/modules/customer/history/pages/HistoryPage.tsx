@@ -11,6 +11,7 @@ export default function HistoryPage() {
   const { data: addonsResult } = useAddons();
 
   const [activeTab, setActiveTab] = useState("PENDING");
+  const [selectedDate, setSelectedDate] = useState<string>("");
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
 
   const bookings = result?.data || [];
@@ -18,13 +19,29 @@ export default function HistoryPage() {
   const ADDONS = addonsResult?.data || [];
 
   const filteredBookings = useMemo(() => {
-    return bookings.filter((b: any) => {
+    let list = bookings.filter((b: any) => {
       if (activeTab === "PENDING") {
         return ["PENDING", "ASSIGNED", "IN_PROGRESS"].includes(b.status);
       }
       return ["COMPLETED", "CANCELLED"].includes(b.status);
     });
-  }, [bookings, activeTab]);
+
+    if (selectedDate) {
+      list = list.filter((b: any) => {
+        if (!b.date) return false;
+        try {
+          // Format booking date to yyyy-MM-dd to match input[type="date"] format
+          const formattedBDate = format(new Date(b.date), 'yyyy-MM-dd');
+          return formattedBDate === selectedDate;
+        } catch (e) {
+          return false;
+        }
+      });
+    }
+
+    // Sort by chronological creation
+    return list.sort((a: any, b: any) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+  }, [bookings, activeTab, selectedDate]);
 
   if (isLoading) return <div className="p-6 pb-24 text-center mt-12">Loading history...</div>;
   if (isError) return (
@@ -41,25 +58,48 @@ export default function HistoryPage() {
     <div className="p-6 pb-24 md:max-w-7xl md:mx-auto w-full">
       <h1 className="text-2xl font-bold mb-6">Booking History</h1>
 
-      <div className="mb-6 overflow-hidden rounded-lg bg-charcoal-800 p-1 flex">
-        <button
-          className={cn(
-            "flex-1 py-2 text-sm font-medium rounded-md transition-colors",
-            activeTab === "PENDING" ? "bg-brand-blue text-white" : "text-text-grey hover:text-white"
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        {/* Tabs */}
+        <div className="flex-1 overflow-hidden rounded-lg bg-charcoal-800 p-1 flex">
+          <button
+            className={cn(
+              "flex-1 py-2 text-sm font-medium rounded-md transition-colors",
+              activeTab === "PENDING" ? "bg-brand-blue text-white" : "text-text-grey hover:text-white"
+            )}
+            onClick={() => setActiveTab("PENDING")}
+          >
+            Active / Progress
+          </button>
+          <button
+            className={cn(
+              "flex-1 py-2 text-sm font-medium rounded-md transition-colors",
+              activeTab === "COMPLETED" ? "bg-brand-blue text-white" : "text-text-grey hover:text-white"
+            )}
+            onClick={() => setActiveTab("COMPLETED")}
+          >
+            Completed / Cancelled
+          </button>
+        </div>
+
+        {/* Date Filter */}
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="bg-charcoal-800 border border-white/10 rounded-lg pl-3 pr-3 py-2 text-sm text-white focus:outline-none focus:border-brand-blue [&::-webkit-calendar-picker-indicator]:invert"
+            />
+          </div>
+          {selectedDate && (
+            <button
+              onClick={() => setSelectedDate("")}
+              className="text-xs text-brand-blue hover:text-white transition-colors underline"
+            >
+              Clear
+            </button>
           )}
-          onClick={() => setActiveTab("PENDING")}
-        >
-          Active / Progress
-        </button>
-        <button
-          className={cn(
-            "flex-1 py-2 text-sm font-medium rounded-md transition-colors",
-            activeTab === "COMPLETED" ? "bg-brand-blue text-white" : "text-text-grey hover:text-white"
-          )}
-          onClick={() => setActiveTab("COMPLETED")}
-        >
-          Completed / Cancelled
-        </button>
+        </div>
       </div>
 
       {filteredBookings.length === 0 ? (

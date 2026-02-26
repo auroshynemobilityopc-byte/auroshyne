@@ -14,10 +14,4 @@ router.get(
     invoiceController.generateInvoice
 );
 
-router.get(
-    '/download/:fileName',
-    allowRoles(ADMIN, CUSTOMER),
-    invoiceController.downloadInvoice
-);
-
 module.exports = router;

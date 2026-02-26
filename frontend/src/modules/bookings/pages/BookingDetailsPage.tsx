@@ -10,11 +10,8 @@ import {
 
 import type {
     PaymentStatus,
-    BookingStatus,
 } from "../types";
 
-import { VehicleItem } from "../components/VehicleItem";
-import { BookingSummaryCard } from "../components/BookingSummaryCard";
 
 import { AssignTechnicianSheet } from "../components/AssignTechnicianSheet";
 import { PaymentActions } from "../components/PaymentActions";
@@ -27,10 +24,9 @@ export const BookingDetailsPage = () => {
     const { id } = useParams();
     const navigate = useNavigate();
 
-    const { data: booking, isLoading, refetch } =
-        useBookingDetails(id);
+    const { data, isLoading, refetch } = useBookingDetails(id);
+    const booking = data;
 
-    /* ---------------- DRAWER STATE ---------------- */
     const [assignOpen, setAssignOpen] = useState(false);
     const [paymentOpen, setPaymentOpen] = useState(false);
     const [statusOpen, setStatusOpen] = useState(false);
@@ -39,183 +35,306 @@ export const BookingDetailsPage = () => {
     const [paymentStatus, setPaymentStatus] =
         useState<PaymentStatus>("UNPAID");
 
-    /* ---------------- MUTATIONS ---------------- */
     const assignMutation = useAssignTechnician();
     const paymentMutation = useUpdatePayment();
     const statusMutation = useUpdateStatus();
 
-    /* ---------------- HANDLERS ---------------- */
-
-    const handleAssign = (technicianId: string) => {
-        if (!booking) return;
-
-        assignMutation.mutate(
-            { bookingId: booking.bookingId, technicianId },
-            {
-                onSuccess: () => {
-                    setAssignOpen(false);
-                    refetch();
-                },
-            }
-        );
-    };
-
-    const handleStatusChange = (status: BookingStatus) => {
-        if (!booking) return;
-
-        statusMutation.mutate(
-            { bookingId: booking.bookingId, status },
-            {
-                onSuccess: () => {
-                    setStatusOpen(false);
-                    refetch();
-                },
-            }
-        );
-    };
-
-    const handlePaymentAction = (
-        status: PaymentStatus,
-        method?: "CASH" | "UPI"
-    ) => {
-        if (!booking) return;
-
-        if (status === "PAID" && method === "UPI") {
-            setPaymentOpen(false);
-            setUpiOpen(true);
-            return;
-        }
-
-        paymentMutation.mutate(
-            {
-                bookingId: booking.bookingId,
-                method: method ?? "CASH",
-                status,
-            },
-            {
-                onSuccess: () => {
-                    setPaymentOpen(false);
-                    refetch();
-                },
-            }
-        );
-    };
-
-    const handleUpiSubmit = (transactionId: string) => {
-        if (!booking) return;
-
-        paymentMutation.mutate(
-            {
-                bookingId: booking.bookingId,
-                method: "UPI",
-                status: "PAID",
-                transactionId,
-            },
-            {
-                onSuccess: () => {
-                    setUpiOpen(false);
-                    refetch();
-                },
-            }
-        );
-    };
-
-    /* ---------------- LOADING ---------------- */
     if (isLoading || !booking) {
-        return <p>Loading...</p>;
+        return (
+            <div className="flex justify-center items-center h-40 text-zinc-400 animate-pulse">
+                Loading booking details...
+            </div>
+        );
     }
 
-    /* ---------------- UI ---------------- */
+    const subtotal = booking.totalAmount + booking.discount;
 
     return (
-        <div className="flex flex-col gap-4">
-            {/* CUSTOMER */}
-            <div className="bg-zinc-900 rounded-xl p-4">
-                <p className="font-medium">{booking.customer.name}</p>
+        <div className="flex flex-col gap-5 animate-fadeIn pb-24">
+            {/* 🔷 HEADER */}
+            <div className="flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-xl font-semibold text-white">
+                            Booking #{booking.bookingId}
+                        </h1>
+                        <p className="text-sm text-zinc-400">
+                            {new Date(booking.date).toDateString()} •{" "}
+                            {booking.slot}
+                        </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            className="h-10 px-3 sm:px-4 flex items-center gap-2 border border-zinc-800 hover:bg-zinc-900"
+                            onClick={() => refetch()}
+                        >
+                            <span className="text-base">🔄</span>
+                            <span className="hidden sm:inline">Refresh</span>
+                        </Button>
+
+                        <Button
+                            variant="ghost"
+                            className="h-10 px-3 sm:px-4 flex items-center gap-2 border border-zinc-800 hover:bg-zinc-900"
+                            onClick={() => navigate("/bookings")}
+                        >
+                            <span className="text-base">⬅️</span>
+                            <span className="hidden sm:inline">Back</span>
+                        </Button>
+                    </div>
+                </div>
+
+                {/* 💰 AMOUNT CARD */}
+                <div className="bg-gradient-to-r from-indigo-600/20 to-blue-600/20 border border-indigo-500/20 rounded-xl p-4">
+                    <p className="text-sm text-zinc-400">
+                        Total Amount
+                    </p>
+                    <p className="text-2xl font-bold text-white">
+                        ₹{booking.totalAmount}
+                    </p>
+                </div>
+            </div>
+
+            {/* 👤 CUSTOMER CARD */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                <p className="font-medium text-white">
+                    {booking.customer.name}
+                </p>
                 <p className="text-sm text-zinc-400">
                     {booking.customer.mobile}
                 </p>
                 <p className="text-sm text-zinc-500">
                     {booking.customer.address}
                 </p>
+
+                {booking.technicianId && (
+                    <div className="mt-3 text-sm text-zinc-400">
+                        👨‍🔧 {booking.technicianId.name} •{" "}
+                        {booking.technicianId.mobile}
+                    </div>
+                )}
             </div>
 
-            {/* SUMMARY */}
-            <BookingSummaryCard booking={booking} />
+            {/* 🧾 BILL / PRICE BREAKDOWN */}
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+                <h2 className="text-sm font-medium text-zinc-400 mb-3">
+                    Price Details
+                </h2>
 
-            {/* VEHICLES */}
-            <div className="flex flex-col gap-3">
-                {booking.vehicles.map((v: any) => (
-                    <VehicleItem key={v.number} v={v} />
-                ))}
+                <div className="flex flex-col gap-2 text-sm">
+                    {booking.vehicles.map((v) => (
+                        <div key={v.number} className="flex flex-col gap-1">
+                            <div className="flex justify-between text-zinc-300">
+                                <span>
+                                    {v.number} • {v.serviceId.name}
+                                </span>
+                                <span>₹{v.serviceId.price}</span>
+                            </div>
+
+                            {v.addons.map((addon, idx) => (
+                                <div
+                                    key={idx}
+                                    className="flex justify-between text-zinc-500 text-xs ml-2"
+                                >
+                                    <span>+ {addon.name}</span>
+                                    <span>₹{addon.price}</span>
+                                </div>
+                            ))}
+                        </div>
+                    ))}
+
+                    <div className="border-t border-zinc-800 my-2" />
+
+                    <div className="flex justify-between text-zinc-400">
+                        <span>Subtotal</span>
+                        <span>₹{subtotal}</span>
+                    </div>
+
+                    {booking.discount > 0 && (
+                        <div className="flex justify-between text-emerald-400">
+                            <span>Discount</span>
+                            <span>-₹{booking.discount}</span>
+                        </div>
+                    )}
+
+                    <div className="flex justify-between text-white font-semibold text-base border-t border-zinc-700 pt-2 mt-2">
+                        <span>Total</span>
+                        <span>₹{booking.totalAmount}</span>
+                    </div>
+
+                    {booking.payment.method && (
+                        <div className="flex justify-between text-zinc-400 text-xs mt-2">
+                            <span>Payment Method</span>
+                            <span>{booking.payment.method}</span>
+                        </div>
+                    )}
+
+                    {booking.payment.transactionId && (
+                        <div className="flex justify-between text-zinc-500 text-xs">
+                            <span>Txn ID</span>
+                            <span>
+                                {booking.payment.transactionId}
+                            </span>
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {/* QUICK ACTIONS */}
-            <div className="flex gap-2 flex-wrap">
+            <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
+                <div className="w-full sm:w-auto">
+                    <Button
+                        variant="secondary"
+                        className="w-full sm:w-auto"
+                        onClick={() => setAssignOpen(true)}
+                    >
+                        👨‍🔧 Assign
+                    </Button>
+                </div>
+
+                <div className="w-full sm:w-auto">
+                    <Button
+                        variant="secondary"
+                        className="w-full sm:w-auto"
+                        onClick={() => setStatusOpen(true)}
+                    >
+                        🔄 Status
+                    </Button>
+                </div>
+
+                <div className="w-full sm:w-auto">
+                    <Button
+                        variant="secondary"
+                        className="w-full sm:w-auto"
+                        onClick={() => {
+                            setPaymentStatus(booking.payment.status);
+                            setPaymentOpen(true);
+                        }}
+                    >
+                        💳 Payment
+                    </Button>
+                </div>
+            </div>
+
+            {/* 🧾 INVOICE NAV */}
+            <div className="w-full sm:w-auto">
                 <Button
+                    className="w-full sm:w-auto"
+                    onClick={() =>
+                        navigate(`/admin/invoices/${booking.bookingId}`)
+                    }
+                >
+                    View Invoice
+                </Button>
+            </div>
+
+            {/* 📱 STICKY MOBILE ACTION BAR */}
+            <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 border-t border-zinc-800 p-3 flex gap-3 md:hidden">
+                <Button
+                    className="flex-1"
                     variant="secondary"
                     onClick={() => setAssignOpen(true)}
                 >
-                    Assign Technician
+                    Assign
                 </Button>
 
                 <Button
+                    className="flex-1"
                     variant="secondary"
                     onClick={() => setStatusOpen(true)}
                 >
-                    Change Status
+                    Status
                 </Button>
 
                 <Button
-                    variant="secondary"
+                    className="flex-1"
                     onClick={() => {
                         setPaymentStatus(booking.payment.status);
                         setPaymentOpen(true);
                     }}
                 >
-                    Payment
+                    Pay
                 </Button>
             </div>
 
-            {/* INVOICE */}
-            <Button
-                onClick={() =>
-                    navigate(`/admin/invoices/${booking.bookingId}`)
-                }
-            >
-                View Invoice
-            </Button>
-
-            {/* REFRESH */}
-            <Button variant="ghost" onClick={() => refetch()}>
-                Refresh
-            </Button>
-
-            {/* ---------------- DRAWERS ---------------- */}
-
+            {/* DRAWERS */}
             <AssignTechnicianSheet
                 open={assignOpen}
                 onClose={() => setAssignOpen(false)}
-                onAssign={handleAssign}
+                onAssign={(id) =>
+                    assignMutation.mutate(
+                        { bookingId: booking.bookingId, technicianId: id },
+                        {
+                            onSuccess: () => {
+                                setAssignOpen(false);
+                                refetch();
+                            },
+                        }
+                    )
+                }
             />
 
             <PaymentActions
                 open={paymentOpen}
                 status={paymentStatus}
                 onClose={() => setPaymentOpen(false)}
-                onSelect={handlePaymentAction}
+                onSelect={(status, method) => {
+                    if (status === "PAID" && method === "UPI") {
+                        setPaymentOpen(false);
+                        setUpiOpen(true);
+                        return;
+                    }
+
+                    paymentMutation.mutate(
+                        {
+                            bookingId: booking.bookingId,
+                            method: method ?? "CASH",
+                            status,
+                        },
+                        {
+                            onSuccess: () => {
+                                setPaymentOpen(false);
+                                refetch();
+                            },
+                        }
+                    );
+                }}
             />
 
             <UpiTxnDrawer
                 open={upiOpen}
                 onClose={() => setUpiOpen(false)}
-                onSubmit={handleUpiSubmit}
+                onSubmit={(transactionId) =>
+                    paymentMutation.mutate(
+                        {
+                            bookingId: booking.bookingId,
+                            method: "UPI",
+                            status: "PAID",
+                            transactionId,
+                        },
+                        {
+                            onSuccess: () => {
+                                setUpiOpen(false);
+                                refetch();
+                            },
+                        }
+                    )
+                }
             />
 
             <StatusActions
                 open={statusOpen}
                 onClose={() => setStatusOpen(false)}
-                onSelect={handleStatusChange}
+                onSelect={(status) =>
+                    statusMutation.mutate(
+                        { bookingId: booking.bookingId, status },
+                        {
+                            onSuccess: () => {
+                                setStatusOpen(false);
+                                refetch();
+                            },
+                        }
+                    )
+                }
             />
         </div>
     );

@@ -6,11 +6,15 @@ const Technician = require('../technicians/technician.model');
 const slotConfig = require('../../config/slot.config');
 const { AppError } = require('../../common/utils/appError');
 const notificationService = require('../notifications/notification.service');
+const discountService = require('../discounts/discount.service');
+
+/* ---------------- HELPERS ---------------- */
 
 const calculateVehiclePrice = async (vehicle) => {
     const service = await Service.findById(vehicle.serviceId).lean();
-    if (!service || !service.isActive)
+    if (!service || !service.isActive) {
         throw new AppError('Invalid service', 400);
+    }
 
     let addonsTotal = 0;
 
@@ -26,15 +30,6 @@ const calculateVehiclePrice = async (vehicle) => {
     return service.price + addonsTotal;
 };
 
-const checkSlotCapacity = async (date, slot, count) => {
-    const existing = await Booking.countDocuments({ date, slot });
-    const capacity = slotConfig[slot].capacity;
-
-    if (existing + count > capacity) {
-        throw new AppError('Slot capacity exceeded', 400);
-    }
-};
-
 const validateStatusTransition = (current, next) => {
     const flow = {
         PENDING: ['ASSIGNED', 'CANCELLED'],
@@ -47,35 +42,117 @@ const validateStatusTransition = (current, next) => {
     }
 };
 
-exports.createBooking = async (payload, userId) => {
-    await checkDuplicateVehicle(payload.vehicles, payload.date, payload.slot);
-    await checkSlotCapacity(payload.date, payload.slot, 1);
+const checkDuplicateVehicle = async (vehicles, date, slot, session) => {
+    const numbers = vehicles.map((v) => v.number);
 
-    let totalAmount = 0;
-
-    const vehicles = [];
-
-    for (const v of payload.vehicles) {
-        const price = await calculateVehiclePrice(v);
-        totalAmount += price;
-
-        vehicles.push({ ...v, price });
+    if (new Set(numbers).size !== numbers.length) {
+        throw new AppError('Duplicate vehicle in request', 400);
     }
 
-    const booking = await Booking.create({
-        ...payload,
-        userId,
-        payment: {
-            method: payload.paymentMode || null,
-            status: 'UNPAID',
-        },
-        vehicles,
-        totalAmount,
-        isBulk: payload.vehicles.length > 1,
-    });
+    const existing = await Booking.findOne({
+        date,
+        slot,
+        status: { $ne: 'CANCELLED' },
+        'vehicles.number': { $in: numbers },
+    })
+        .session(session)
+        .lean();
 
-    return booking;
+    if (existing) {
+        throw new AppError(`Vehicle already booked for ${date} ${slot}`, 400);
+    }
 };
+
+const checkSlotCapacityTx = async (date, slot, count, session) => {
+    const existing = await Booking.countDocuments({ date, slot }).session(session);
+    const capacity = slotConfig[slot].capacity;
+
+    if (existing + count > capacity) {
+        throw new AppError('Slot capacity exceeded', 400);
+    }
+};
+
+const calculateDiscount = (totalAmount, vehicleCount) => {
+    let discount = 0;
+
+    if (vehicleCount === 2) discount = totalAmount * 0.05;
+    if (vehicleCount >= 3) discount = totalAmount * 0.1;
+
+    return discount;
+};
+
+/* ---------------- CREATE BOOKING ---------------- */
+
+exports.createBooking = async (payload, userId) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        await checkDuplicateVehicle(payload.vehicles, payload.date, payload.slot, session);
+        await checkSlotCapacityTx(payload.date, payload.slot, payload.vehicles.length, session);
+
+        let totalAmount = 0;
+        const vehicles = [];
+
+        for (const v of payload.vehicles) {
+            const price = await calculateVehiclePrice(v);
+            totalAmount += price;
+            vehicles.push({ ...v, price });
+        }
+
+        let discount = calculateDiscount(totalAmount, vehicles.length);
+
+        if (payload.discountCode) {
+            const discountObj = await discountService.validateDiscountCode(payload.discountCode, totalAmount);
+            let codeDiscount = discountObj.type === 'percentage'
+                ? totalAmount * (discountObj.value / 100)
+                : discountObj.value;
+
+            if (discountObj.maxDiscount && codeDiscount > discountObj.maxDiscount) {
+                codeDiscount = discountObj.maxDiscount;
+            }
+
+            if (codeDiscount > discount) discount = codeDiscount;
+
+            await mongoose.model('Discount').updateOne(
+                { _id: discountObj._id },
+                { $inc: { usedCount: 1 } },
+                { session }
+            );
+        }
+
+        const finalAmount = totalAmount - discount;
+
+        const booking = await Booking.create(
+            [
+                {
+                    ...payload,
+                    userId,
+                    payment: {
+                        method: payload.paymentMode || null,
+                        status: 'UNPAID',
+                    },
+                    vehicles,
+                    totalAmount: finalAmount,
+                    discount,
+                    isBulk: vehicles.length > 1,
+                },
+            ],
+            { session }
+        );
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return booking[0];
+    } catch (err) {
+        await session.abortTransaction();
+        session.endSession();
+        throw err;
+    }
+};
+
+/* ---------------- BULK BOOKING ---------------- */
 
 exports.bulkBooking = async (payload, userId) => {
     const session = await mongoose.startSession();
@@ -83,8 +160,8 @@ exports.bulkBooking = async (payload, userId) => {
 
     try {
         for (const b of payload.bookings) {
-            await checkDuplicateVehicle(b.vehicles, b.date, b.slot);
-            await checkSlotCapacity(b.date, b.slot, 1);
+            await checkDuplicateVehicle(b.vehicles, b.date, b.slot, session);
+            await checkSlotCapacityTx(b.date, b.slot, b.vehicles.length, session);
         }
 
         const results = [];
@@ -99,12 +176,26 @@ exports.bulkBooking = async (payload, userId) => {
                 vehicles.push({ ...v, price });
             }
 
-            // 🔻 bulk vehicle discount inside each booking
-            let discount = 0;
-            const vehicleCount = vehicles.length;
+            let discount = calculateDiscount(totalAmount, vehicles.length);
 
-            if (vehicleCount === 2) discount = totalAmount * 0.05;
-            if (vehicleCount >= 3) discount = totalAmount * 0.1;
+            if (b.discountCode) {
+                const discountObj = await discountService.validateDiscountCode(b.discountCode, totalAmount);
+                let codeDiscount = discountObj.type === 'percentage'
+                    ? totalAmount * (discountObj.value / 100)
+                    : discountObj.value;
+
+                if (discountObj.maxDiscount && codeDiscount > discountObj.maxDiscount) {
+                    codeDiscount = discountObj.maxDiscount;
+                }
+
+                if (codeDiscount > discount) discount = codeDiscount;
+
+                await mongoose.model('Discount').updateOne(
+                    { _id: discountObj._id },
+                    { $inc: { usedCount: 1 } },
+                    { session }
+                );
+            }
 
             const finalAmount = totalAmount - discount;
 
@@ -120,7 +211,7 @@ exports.bulkBooking = async (payload, userId) => {
                         vehicles,
                         totalAmount: finalAmount,
                         discount,
-                        isBulk: vehicleCount > 1,
+                        isBulk: vehicles.length > 1,
                     },
                 ],
                 { session }
@@ -140,13 +231,28 @@ exports.bulkBooking = async (payload, userId) => {
     }
 };
 
+/* ---------------- ASSIGN TECHNICIAN ---------------- */
+
 exports.assignTechnician = async ({ bookingId, technicianId }) => {
     const booking = await Booking.findOne({ bookingId });
     if (!booking) throw new AppError('Booking not found', 404);
 
+    if (booking.status === 'COMPLETED') {
+        throw new AppError('Completed booking cannot be modified', 400);
+    }
+
     const technician = await Technician.findById(technicianId);
-    if (!technician || !technician.isActive)
+    if (!technician || !technician.isActive) {
         throw new AppError('Invalid technician', 400);
+    }
+
+    const alreadyAssigned = technician.assignedSlots.some(
+        (s) => s.date === booking.date && s.slot === booking.slot
+    );
+
+    if (alreadyAssigned) {
+        throw new AppError('Technician already assigned for this slot', 400);
+    }
 
     booking.technicianId = technicianId;
     booking.status = 'ASSIGNED';
@@ -159,8 +265,6 @@ exports.assignTechnician = async ({ bookingId, technicianId }) => {
     await technician.save();
     await booking.save();
 
-    // 🔔 Notify the customer that a technician has been assigned
-    // We fire-and-forget so a notification failure never blocks the response.
     notificationService
         .notifyTechnicianAssigned({
             userId: booking.userId,
@@ -170,15 +274,24 @@ exports.assignTechnician = async ({ bookingId, technicianId }) => {
             slot: booking.slot,
         })
         .catch((err) =>
-            console.error('[Notification] Failed to create technician-assigned notification:', err.message)
+            console.error(
+                '[Notification] Failed to create technician-assigned notification:',
+                err.message
+            )
         );
 
     return booking;
 };
 
+/* ---------------- UPDATE STATUS ---------------- */
+
 exports.updateBookingStatus = async ({ bookingId, status }) => {
     const booking = await Booking.findOne({ bookingId });
     if (!booking) throw new AppError('Booking not found', 404);
+
+    if (booking.status === 'COMPLETED') {
+        throw new AppError('Completed booking cannot be modified', 400);
+    }
 
     validateStatusTransition(booking.status, status);
 
@@ -188,30 +301,44 @@ exports.updateBookingStatus = async ({ bookingId, status }) => {
     return booking;
 };
 
-exports.updatePayment = async ({
-    bookingId,
-    method,
-    status,
-    transactionId,
-}) => {
+/* ---------------- UPDATE PAYMENT ---------------- */
+
+exports.updatePayment = async ({ bookingId, method, status, transactionId }) => {
     const booking = await Booking.findOne({ bookingId });
     if (!booking) throw new AppError('Booking not found', 404);
 
-    booking.payment = { method, status, transactionId };
+    if (booking.status === 'COMPLETED' && status !== 'REFUND_INITIATED') {
+        throw new AppError('Payment cannot be modified for completed booking', 400);
+    }
+
+    booking.payment.method = method;
+    booking.payment.status = status;
+
+    if (transactionId !== undefined) {
+        booking.payment.transactionId = transactionId;
+    }
 
     await booking.save();
     return booking;
 };
+
+/* ---------------- GET BOOKINGS ---------------- */
 
 exports.getBookings = async (filters, page, limit) => {
     const skip = (page - 1) * limit;
 
     const query = {};
 
-    if (filters.date) query.date = filters.date;
+    if (filters.date) {
+        // `date` is stored as a plain string ("YYYY-MM-DD") in the model,
+        // so use an exact string match — not a Date-range query.
+        query.date = filters.date;
+    }
+
     if (filters.slot) query.slot = filters.slot;
     if (filters.status) query.status = filters.status;
     if (filters.paymentStatus) query['payment.status'] = filters.paymentStatus;
+
     if (filters.isAssigned === 'true') {
         query.technicianId = { $ne: null };
     } else if (filters.isAssigned === 'false') {
@@ -239,18 +366,27 @@ exports.getBookings = async (filters, page, limit) => {
     };
 };
 
+/* ---------------- GET BY ID ---------------- */
+
 exports.getBookingById = async (id) => {
     const booking = await Booking.findOne({ bookingId: id })
         .populate('technicianId', 'name mobile')
+        .populate('userId', 'name mobile')
+        .populate('vehicles.serviceId', 'name price')
+        .populate('vehicles.addons', 'name price')
         .lean();
 
     if (!booking) throw new AppError('Booking not found', 404);
     return booking;
 };
 
+/* ---------------- GET SLOT BOOKINGS ---------------- */
+
 exports.getSlotBookings = async (date, slot) => {
     return Booking.find({ date, slot }).lean();
 };
+
+/* ---------------- MY BOOKINGS ---------------- */
 
 exports.getMyBookings = async (userId) => {
     return Booking.find({ userId })
@@ -258,90 +394,46 @@ exports.getMyBookings = async (userId) => {
         .lean();
 };
 
-const checkDuplicateVehicle = async (vehicles, date, slot) => {
-    const numbers = vehicles.map((v) => v.number);
-
-    const uniqueNumbers = new Set(numbers);
-    if (uniqueNumbers.size !== numbers.length) {
-        throw new AppError('Duplicate vehicle in request', 400);
-    }
-
-    const existing = await Booking.findOne({
-        date,
-        slot,
-        status: { $ne: 'CANCELLED' },
-        'vehicles.number': { $in: numbers },
-    }).lean();
-
-    if (existing) {
-        throw new AppError(
-            `Vehicle already booked for ${date} ${slot}`,
-            400
-        );
-    }
-};
+/* ---------------- CANCEL ---------------- */
 
 exports.cancelBooking = async (bookingId, userId) => {
     const booking = await Booking.findOne({ bookingId });
     if (!booking) throw new AppError('Booking not found', 404);
-    if (String(booking.userId) !== String(userId))
+
+    if (String(booking.userId) !== String(userId)) {
         throw new AppError('Unauthorized', 403);
-    if (!['PENDING'].includes(booking.status))
+    }
+
+    if (!['PENDING'].includes(booking.status)) {
         throw new AppError('Only PENDING bookings can be cancelled', 400);
+    }
 
     booking.status = 'CANCELLED';
     await booking.save();
+
     return booking;
 };
+
+/* ---------------- REFUND ---------------- */
 
 exports.requestRefund = async (bookingId, userId, reason) => {
     const booking = await Booking.findOne({ bookingId });
     if (!booking) throw new AppError('Booking not found', 404);
-    if (String(booking.userId) !== String(userId))
+
+    if (String(booking.userId) !== String(userId)) {
         throw new AppError('Unauthorized', 403);
-    if (booking.status !== 'CANCELLED')
+    }
+
+    if (booking.status !== 'CANCELLED') {
         throw new AppError('Only CANCELLED bookings can request refund', 400);
-    if (booking.payment.status !== 'PAID')
+    }
+
+    if (booking.payment.status !== 'PAID') {
         throw new AppError('No paid payment to refund', 400);
+    }
 
     booking.payment.status = 'REFUND_INITIATED';
     booking.refundReason = reason || '';
-    await booking.save();
-    return booking;
-};
-
-exports.updateBookingByCustomer = async (bookingId, userId, updates) => {
-    const booking = await Booking.findOne({ bookingId });
-    if (!booking) throw new AppError('Booking not found', 404);
-    if (String(booking.userId) !== String(userId))
-        throw new AppError('Unauthorized', 403);
-    if (!['PENDING'].includes(booking.status))
-        throw new AppError('Booking cannot be edited at this stage', 400);
-
-    // Address / mobile
-    if (updates.customer) {
-        if (updates.customer.address) booking.customer.address = updates.customer.address;
-        if (updates.customer.mobile) booking.customer.mobile = updates.customer.mobile;
-        if (updates.customer.apartmentName !== undefined) booking.customer.apartmentName = updates.customer.apartmentName;
-    }
-
-    // Per-vehicle edits
-    if (updates.vehicles && Array.isArray(updates.vehicles)) {
-        for (const upd of updates.vehicles) {
-            const v = booking.vehicles.find(bv => bv.number === upd.originalNumber);
-            if (!v) continue;
-            if (upd.number) v.number = upd.number;
-            if (upd.model !== undefined) v.model = upd.model;
-            const newServiceId = upd.serviceId || v.serviceId;
-            const newAddons = upd.addons !== undefined ? upd.addons : v.addons;
-            if (upd.serviceId || upd.addons !== undefined) {
-                v.serviceId = newServiceId;
-                v.addons = newAddons;
-                v.price = await calculateVehiclePrice({ serviceId: newServiceId, addons: newAddons });
-            }
-        }
-        booking.totalAmount = booking.vehicles.reduce((s, v) => s + v.price, 0);
-    }
 
     await booking.save();
     return booking;

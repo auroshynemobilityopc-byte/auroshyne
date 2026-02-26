@@ -10,6 +10,9 @@ import ProfilePage from "../../modules/customer/profile/pages/ProfilePage";
 import EditProfilePage from "../../modules/customer/profile/pages/EditProfilePage";
 import SavedDataPage from "../../modules/customer/profile/pages/SavedDataPage";
 import NotificationsPage from "../../modules/customer/notifications/pages/NotificationsPage";
+import ContactUS from "../../modules/customer/contact/ContactUS";
+import FAQs from "../../modules/customer/contact/FAQs";
+import PrivacyPolicy from "../../modules/customer/contact/PrivacyPolicy";
 
 // Deleted dummy component
 
@@ -53,7 +56,12 @@ export const customerRoutes = createBrowserRouter([
                     // Bookings Engine
                     { path: "/bookings", element: <BookingPage /> },
                     { path: "/history", element: <HistoryPage /> },
-                    { path: "/booking-confirmation", element: <div className="p-4 text-white">Booking Confirmation</div> }
+                    { path: "/booking-confirmation", element: <div className="p-4 text-white">Booking Confirmation</div> },
+
+                    // Support
+                    { path: "/contact", element: <ContactUS /> },
+                    { path: "/faq", element: <FAQs /> },
+                    { path: "/privacy-policy", element: <PrivacyPolicy /> }
                 ],
             },
         ],

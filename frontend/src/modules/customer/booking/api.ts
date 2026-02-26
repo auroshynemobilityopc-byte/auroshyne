@@ -34,3 +34,8 @@ export const updateBookingByCustomer = async (data: any) => {
     const response = await customerApi.patch("/bookings/my/edit", data);
     return response.data;
 };
+
+export const validateDiscount = async (data: { code: string; orderValue: number }) => {
+    const response = await customerApi.post("/discounts/validate", data);
+    return response.data;
+};

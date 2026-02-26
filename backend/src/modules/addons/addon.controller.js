@@ -24,7 +24,7 @@ exports.getAddons = asyncHandler(async (req, res) => {
     const { error, value } = paginationDTO.validate(req.query);
     if (error) throw new AppError(error.details[0].message, 400);
 
-    const data = await addonService.getAddons(value, req.user.role);
+    const data = await addonService.getAddons(value, req.user?.role || 'CUSTOMER');
 
     res.status(200).json({
         success: true,

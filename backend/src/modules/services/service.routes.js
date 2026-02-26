@@ -6,7 +6,7 @@ const { allowRoles } = require('../../common/middleware/role.middleware');
 const { ADMIN, CUSTOMER } = require('../../common/constants/roles');
 
 
-router.get('/', protect, allowRoles(CUSTOMER, ADMIN), serviceController.getServices);
+router.get('/', serviceController.getServices);
 
 router.get('/vehicleType/:vehicleType', protect, allowRoles(CUSTOMER, ADMIN), serviceController.getServiceByVehicleType);
 

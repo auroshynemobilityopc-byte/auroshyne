@@ -98,11 +98,13 @@ const bookingSchema = new mongoose.Schema(
     { timestamps: true }
 );
 
-bookingSchema.index({
-    date: 1,
-    slot: 1,
-    'vehicles.number': 1,
-});
+bookingSchema.index({ bookingId: 1 }, { unique: true });
+bookingSchema.index({ date: 1, slot: 1 });
+bookingSchema.index({ 'vehicles.number': 1, date: 1, slot: 1 });
+bookingSchema.index({ userId: 1 });
+bookingSchema.index({ technicianId: 1 });
+bookingSchema.index({ status: 1 });
+bookingSchema.index({ 'payment.status': 1 });
 
 bookingSchema.pre('save', function () {
     if (!this.bookingId) {

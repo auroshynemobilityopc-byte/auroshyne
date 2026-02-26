@@ -85,7 +85,7 @@ export const EditBookingSheet = ({ booking, services, addons, open, onClose, onS
                     </button>
                 </div>
 
-                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto space-y-6 pb-24 pr-1">
+                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto space-y-6 pb-40 md:pb-24 pr-1">
 
                     {/* Address */}
                     <div className="space-y-3">
@@ -214,7 +214,7 @@ export const EditBookingSheet = ({ booking, services, addons, open, onClose, onS
                 </form>
 
                 {/* Sticky Save Button */}
-                <div className="absolute bottom-0 left-0 right-0 p-4 bg-charcoal-900/95 backdrop-blur border-t border-white/5">
+                <div className="absolute bottom-0 left-0 right-0 p-4 pb-24 md:pb-4 bg-charcoal-900/95 backdrop-blur border-t border-white/5">
                     <button
                         onClick={handleSubmit}
                         disabled={updateMutation.isPending}

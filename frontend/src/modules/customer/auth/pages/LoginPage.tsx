@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion } from "motion/react";
-import { ArrowRight, Lock, Mail, Eye, EyeOff, Sparkles, AlertCircle } from "lucide-react";
+import { ArrowLeft, ArrowRight, Lock, Mail, Eye, EyeOff, Sparkles, AlertCircle } from "lucide-react";
 import { useLogin } from "../hooks";
 
 export default function LoginPage() {
@@ -36,6 +36,15 @@ export default function LoginPage() {
       </div>
 
       <div className="relative z-10 flex flex-col flex-1 items-center justify-center p-6">
+        {/* Back Button */}
+        <button
+          onClick={() => navigate("/")}
+          className="absolute top-6 left-6 md:top-8 md:left-8 flex items-center gap-2 text-zinc-400 hover:text-white transition-colors p-2 rounded-xl hover:bg-white/5"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-sm font-medium">Back to Home</span>
+        </button>
+
         {/* Logo / Brand */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}

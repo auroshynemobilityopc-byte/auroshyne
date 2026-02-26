@@ -35,7 +35,7 @@ export const HistoryDetailsSheet = ({ booking, services, addons, open, onClose, 
     const isCancelled = booking.status === "CANCELLED";
     const isPending = booking.status === "PENDING";
     const tech = booking.technicianId;
-    const canEdit = isPending;
+    const canEdit = false; // isPending; (Hidden for now based on request)
     const canCancel = isPending;
     const canRefund = isCancelled && booking.payment?.status === "PAID";
 
@@ -48,7 +48,7 @@ export const HistoryDetailsSheet = ({ booking, services, addons, open, onClose, 
             <Drawer open={open} onClose={onClose}>
                 <div className="flex flex-col h-full max-h-[92vh]">
                     {/* Header */}
-                    <div className="flex justify-between items-start mb-5 border-b border-zinc-800 pb-4">
+                    <div className="flex justify-between items-center mb-5 border-b border-zinc-800 pb-4">
                         <div className="flex-1">
                             <span className="text-xs font-mono text-text-grey mb-1 block">#{booking.bookingId}</span>
                             <h2 className="text-xl font-bold">Booking Details</h2>
@@ -260,9 +260,15 @@ export const HistoryDetailsSheet = ({ booking, services, addons, open, onClose, 
                                         <span className="font-medium font-mono text-xs">{booking.payment.transactionId}</span>
                                     </div>
                                 )}
+                                {booking.discount > 0 && (
+                                    <div className="flex justify-between text-emerald-400">
+                                        <span>Discount Applied</span>
+                                        <span className="font-bold">-₹{(booking.discount || 0).toFixed(2)}</span>
+                                    </div>
+                                )}
                                 <div className="pt-3 mt-3 border-t border-white/5 flex justify-between items-center text-lg">
-                                    <span className="font-bold">Total</span>
-                                    <span className="font-bold text-brand-blue">₹{booking.totalAmount}</span>
+                                    <span className="font-bold">Total Amount</span>
+                                    <span className="font-bold text-brand-blue">₹{(booking.totalAmount || 0).toFixed(2)}</span>
                                 </div>
                             </div>
                         </div>

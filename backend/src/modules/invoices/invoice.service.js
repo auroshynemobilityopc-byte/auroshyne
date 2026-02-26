@@ -1,20 +1,8 @@
-const fs = require('fs');
-const path = require('path');
 const PDFDocument = require('pdfkit');
+const cloudinary = require('cloudinary').v2;
 
 const Booking = require('../bookings/booking.model');
 const { AppError } = require('../../common/utils/appError');
-
-// Use /tmp in serverless environments (AWS Lambda), local temp dir otherwise
-// Ensure directory exists
-// try {
-//     if (!fs.existsSync(TEMP_DIR)) {
-//         fs.mkdirSync(TEMP_DIR, { recursive: true });
-//     }
-// } catch (error) {
-//     console.error('Failed to create invoices directory:', error);
-//     // Directory will be created on-demand during invoice generation if needed
-// }
 
 exports.generateInvoice = async (bookingId) => {
     const booking = await Booking.findOne({ bookingId })
@@ -66,19 +54,27 @@ exports.generateInvoice = async (bookingId) => {
     };
 
     /**
-     * 📄 GENERATE PDF
+     * 📄 GENERATE PDF AND UPLOAD TO CLOUDINARY
      */
-    const fileName = `invoice-${booking.bookingId}.pdf`;
-    const filePath = path.join(TEMP_DIR, fileName);
-
-    // Ensure directory exists before writing
-    if (!fs.existsSync(TEMP_DIR)) {
-        fs.mkdirSync(TEMP_DIR, { recursive: true });
-    }
+    const fileName = `invoice-${booking.bookingId}`;
 
     const doc = new PDFDocument({ margin: 50 });
-    const stream = fs.createWriteStream(filePath);
-    doc.pipe(stream);
+
+    const uploadPromise = new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+            {
+                resource_type: 'raw',
+                public_id: fileName,
+                folder: 'invoices',
+                format: 'pdf'
+            },
+            (error, result) => {
+                if (result) resolve(result);
+                else reject(error);
+            }
+        );
+        doc.pipe(stream);
+    });
 
     doc.fontSize(20).text('Car Wash Invoice', { align: 'center' });
     doc.moveDown();
@@ -103,23 +99,23 @@ exports.generateInvoice = async (bookingId) => {
 
     invoiceData.vehicles.forEach((v, index) => {
         doc.text(`Vehicle ${index + 1}: ${v.number} (${v.type})`);
-        doc.text(`Service: ${v.service.name} - ₹${v.service.price}`);
+        doc.text(`Service: ${v.service.name || 'N/A'} - Rs.${v.service.price || 0}`);
 
         if (v.addons?.length) {
             doc.text('Add-ons:');
             v.addons.forEach((a) => {
-                doc.text(`  - ${a.name} ₹${a.price}`);
+                doc.text(`  - ${a.name} Rs.${a.price}`);
             });
         }
 
-        doc.text(`Vehicle Total: ₹${v.price}`);
+        doc.text(`Vehicle Total: Rs.${v.price}`);
         doc.moveDown();
     });
 
     doc.moveDown();
-    doc.text(`Subtotal: ₹${invoiceData.subtotal}`);
-    doc.text(`Discount: ₹${invoiceData.discount}`);
-    doc.text(`Total Amount: ₹${invoiceData.totalAmount}`, {
+    doc.text(`Subtotal: Rs.${invoiceData.subtotal}`);
+    doc.text(`Discount: Rs.${invoiceData.discount}`);
+    doc.text(`Total Amount: Rs.${invoiceData.totalAmount}`, {
         underline: true,
     });
 
@@ -128,12 +124,12 @@ exports.generateInvoice = async (bookingId) => {
 
     doc.end();
 
-    await new Promise((resolve) => stream.on('finish', resolve));
+    const uploadResult = await uploadPromise;
 
     /**
      * 📥 DOWNLOAD URL
      */
-    const downloadUrl = `/invoices/download/${fileName}`;
+    const downloadUrl = uploadResult.secure_url.replace('/upload/', '/upload/fl_attachment/');
 
     return {
         ...invoiceData,

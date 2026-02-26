@@ -9,7 +9,7 @@ const { ADMIN, CUSTOMER } = require('../../common/constants/roles');
  * 🟢 PUBLIC READ (CUSTOMER OR ANYONE)
  */
 
-router.get('/', protect, allowRoles(CUSTOMER, ADMIN), addonController.getAddons);
+router.get('/', addonController.getAddons);
 
 router.get('/:id', protect, allowRoles(CUSTOMER, ADMIN), addonController.getAddonById);
 

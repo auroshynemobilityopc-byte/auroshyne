@@ -82,11 +82,11 @@ export default function ProfilePage() {
                     <h2 className="text-sm font-bold text-text-grey uppercase tracking-wider mb-3 px-2">Support</h2>
                     <div className="bg-charcoal-800 rounded-2xl overflow-hidden border border-white/5">
                         {[
-                            { icon: Phone, label: "Contact Us" },
-                            { icon: HelpCircle, label: "FAQ" },
-                            { icon: Shield, label: "Privacy Policy" },
+                            { icon: Phone, label: "Contact Us", onClick: () => navigate("/contact") },
+                            { icon: HelpCircle, label: "FAQ", onClick: () => navigate("/faq") },
+                            { icon: Shield, label: "Privacy Policy", onClick: () => navigate("/privacy-policy") },
                         ].map((item, i) => (
-                            <button key={i} className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0">
+                            <button key={i} onClick={item.onClick} className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5 last:border-0">
                                 <div className="flex items-center gap-3">
                                     <item.icon className="w-5 h-5 text-text-grey" />
                                     <span className="font-medium">{item.label}</span>
