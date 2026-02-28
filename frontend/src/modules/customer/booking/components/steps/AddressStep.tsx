@@ -4,6 +4,31 @@ import { MapPin, ChevronDown, ChevronUp, CheckCircle2, Home, Briefcase } from "l
 import { cn } from "../../../lib/utils";
 import type { StepProps } from "../../types";
 import { useSavedData } from "../../../profile/hooks";
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+
+// Fix Leaflet marker icon issue
+import iconUrl from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
+
+const DefaultIcon = L.icon({
+    iconUrl,
+    shadowUrl: iconShadow,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+});
+L.Marker.prototype.options.icon = DefaultIcon;
+
+function LocationMarker({ position, setPosition }: { position: L.LatLng | null; setPosition: (p: L.LatLng) => void }) {
+    useMapEvents({
+        click(e) {
+            setPosition(e.latlng);
+        },
+    });
+
+    return position === null ? null : <Marker position={position}></Marker>;
+}
 
 export default function AddressStep({ booking, updateBooking }: StepProps) {
     const { data: savedResult } = useSavedData();
@@ -19,6 +44,7 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
                 house: a.apartmentName || "",
                 street: a.address || "",
                 mobile: a.mobile || booking.address.mobile,
+                mapLocation: a.mapLocation || null
             },
         });
     };
@@ -152,6 +178,33 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
                             </p>
                         </motion.div>
                     )}
+                </div>
+
+                <div className="space-y-2 mt-4">
+                    <label className="text-sm text-text-grey font-medium flex items-center justify-between">
+                        <span>Pin Location on Map {booking.address.mapLocation && <CheckCircle2 className="inline w-4 h-4 text-brand-blue ml-2" />}</span>
+                        <span className="text-xs text-brand-blue bg-brand-blue/10 px-2 py-0.5 rounded">Optional</span>
+                    </label>
+                    <div className="h-[250px] w-full rounded-2xl overflow-hidden border border-white/10 z-0 relative">
+                        <MapContainer
+                            center={booking.address.mapLocation ? [booking.address.mapLocation.lat, booking.address.mapLocation.lng] : [17.3850, 78.4867]}
+                            zoom={13}
+                            scrollWheelZoom={true}
+                            style={{ height: "100%", width: "100%", zIndex: 0 }}
+                        >
+                            <TileLayer
+                                attribution='&copy; OpenStreetMap contributors'
+                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                            />
+                            <LocationMarker
+                                position={booking.address.mapLocation ? L.latLng(booking.address.mapLocation.lat, booking.address.mapLocation.lng) : null}
+                                setPosition={(p) => {
+                                    updateBooking({ address: { ...booking.address, mapLocation: { lat: p.lat, lng: p.lng } } });
+                                }}
+                            />
+                        </MapContainer>
+                    </div>
+                    <p className="text-xs text-zinc-500">Tap anywhere on the map to drop a pin.</p>
                 </div>
             </div>
         </div>

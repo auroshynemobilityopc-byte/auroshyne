@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { Car, Bike, Truck, Check } from "lucide-react";
+import { Car, Bike, Check } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import type { StepProps, VehicleCategory, VehicleType, Vehicle } from "../../types";
 
@@ -32,7 +32,7 @@ export default function CategoryStep({ booking, updateBooking }: StepProps) {
                         {[
                             { id: 'two-wheeler', label: 'Two Wheeler', icon: Bike },
                             { id: 'four-wheeler', label: 'Four Wheeler', icon: Car },
-                            { id: 'cab', label: 'Cab (Commercial)', icon: Truck, hidden: booking.category === 'private' }
+                            { id: 'cab', label: 'Cab (Commercial)', icon: Car, hidden: booking.category === 'private' }
                         ].filter(t => !t.hidden).map((type) => (
                             <button
                                 key={type.id}

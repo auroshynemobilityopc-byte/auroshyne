@@ -1,14 +1,18 @@
 import { useState } from "react";
-import { Check, CalendarIcon, MapPin, Loader2, X, CheckCircle2 } from "lucide-react";
+import { Check, CalendarIcon, MapPin, Loader2, X, CheckCircle2, Minus, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { SLOTS } from "../../../lib/utils";
 import type { StepProps } from "../../types";
 import { validateDiscount } from "../../api";
+import { useSettings } from "../../../../../modules/settings/hooks";
 
 export default function ReviewStep({ booking, updateBooking, services = [], addons = [], totalEstimate = 0 }: StepProps) {
     const [code, setCode] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const { data: settingsData } = useSettings();
+    const taxPercentage = settingsData?.data?.taxPercentage || 0;
 
     const handleApply = async () => {
         if (!code.trim()) return;
@@ -48,6 +52,15 @@ export default function ReviewStep({ booking, updateBooking, services = [], addo
         updateBooking({ discountCode: null, discountValue: 0 });
         setError(null);
     };
+
+    const handleRemoveAddon = (vehicleId: string, addonIdToRemove: string) => {
+        const newVehicles = booking.vehicles.map(v =>
+            v.id === vehicleId
+                ? { ...v, addonIds: v.addonIds?.filter(id => id !== addonIdToRemove) }
+                : v
+        );
+        updateBooking({ vehicles: newVehicles });
+    };
     return (
         <div className="space-y-6">
             <h2 className="text-xl font-bold">Review Booking</h2>
@@ -56,6 +69,12 @@ export default function ReviewStep({ booking, updateBooking, services = [], addo
                 {booking.vehicles.map((v, i) => {
                     const service = services.find((s: any) => s._id === v.serviceId);
                     const servicePrice = service?.price || 0;
+
+                    let vehicleTotal = servicePrice;
+                    v.addonIds?.forEach(id => {
+                        const addon = addons.find((a: any) => a._id === id);
+                        if (addon) vehicleTotal += addon?.price || 0;
+                    });
 
                     return (
                         <div key={v.id} className="border-b border-white/10 pb-4 last:border-0 last:pb-0">
@@ -66,22 +85,43 @@ export default function ReviewStep({ booking, updateBooking, services = [], addo
                                     </h3>
                                     <p className="text-sm font-medium">{service?.name || 'No Service Selected'}</p>
                                 </div>
-                                <span className="font-bold">₹{servicePrice}</span>
+                            </div>
+
+                            <div className="flex justify-between items-center text-sm font-medium text-text-grey pt-1">
+                                <span>Base Service</span>
+                                <span>₹{servicePrice}</span>
                             </div>
 
                             {v.addonIds && v.addonIds.length > 0 && (
-                                <div className="pl-4 border-l-2 border-white/10 mt-2 space-y-1">
+                                <div className="pl-4 mt-2 space-y-2">
                                     {v.addonIds.map(id => {
                                         const addon = addons.find((a: any) => a._id === id);
                                         return (
-                                            <div key={id} className="flex justify-between text-xs text-text-grey">
-                                                <span>+ {addon?.name}</span>
-                                                <span>₹{addon?.price}</span>
+                                            <div key={id} className="flex justify-between items-center text-xs text-text-grey py-1 rounded">
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => handleRemoveAddon(v.id, id)}
+                                                        className="p-1 rounded bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors"
+                                                        title="Remove Addon"
+                                                    >
+                                                        <Minus className="w-3 h-3" />
+                                                    </button>
+                                                    <span>{addon?.name}</span>
+                                                </div>
+                                                <span className="flex items-center gap-1 font-medium text-zinc-300">
+                                                    <Plus className="w-3 h-3 text-brand-blue" />
+                                                    ₹{addon?.price}
+                                                </span>
                                             </div>
                                         );
                                     })}
                                 </div>
                             )}
+
+                            <div className="flex justify-between items-center pt-3 mt-3 border-t border-white/5">
+                                <span className="text-sm font-bold text-zinc-300">Vehicle Total</span>
+                                <span className="font-bold text-base text-brand-blue">₹{vehicleTotal}</span>
+                            </div>
                         </div>
                     );
                 })}
@@ -97,9 +137,17 @@ export default function ReviewStep({ booking, updateBooking, services = [], addo
                             <span>- ₹{booking.discountValue.toFixed(2)}</span>
                         </div>
                     )}
+                    {taxPercentage > 0 && (
+                        <div className="flex justify-between items-center text-sm text-text-grey">
+                            <span>Tax ({taxPercentage}%)</span>
+                            <span>+ ₹{((totalEstimate - (booking.discountValue || 0)) * (taxPercentage / 100)).toFixed(2)}</span>
+                        </div>
+                    )}
                     <div className="flex justify-between items-center pt-2">
                         <span className="font-bold text-lg">Amount to Pay</span>
-                        <span className="font-bold text-2xl text-brand-blue">₹{(totalEstimate - (booking.discountValue || 0)).toFixed(2)}</span>
+                        <span className="font-bold text-2xl text-brand-blue">
+                            ₹{((totalEstimate - (booking.discountValue || 0)) * (1 + taxPercentage / 100)).toFixed(2)}
+                        </span>
                     </div>
                 </div>
             </div>

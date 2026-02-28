@@ -13,6 +13,7 @@ import { UsersPage } from "../../modules/users/pages/UsersPage";
 import { ProfilePage } from "../../modules/users/pages/ProfilePage";
 import { BookingDetailsPage } from "../../modules/bookings/pages/BookingDetailsPage";
 import { InvoicePage } from "../../modules/invoices/pages/InvoicePage";
+import { SettingsPage } from "./settings/SettingsPage";
 
 export const adminRoutes = createBrowserRouter([
     {
@@ -39,6 +40,7 @@ export const adminRoutes = createBrowserRouter([
                     { path: "addons", element: <AddonsPage /> },
                     { path: "users", element: <UsersPage /> },
                     { path: "profile", element: <ProfilePage /> },
+                    { path: "settings", element: <SettingsPage /> },
                     { path: "bookings/:id", element: <BookingDetailsPage /> },
                     { path: "invoices/:bookingId", element: <InvoicePage /> }
                 ],

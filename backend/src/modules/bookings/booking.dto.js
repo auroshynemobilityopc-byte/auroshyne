@@ -15,6 +15,10 @@ exports.createBookingDTO = Joi.object({
         mobile: Joi.string().pattern(/^[6-9]\d{9}$/).required(),
         address: Joi.string().required(),
         apartmentName: Joi.string().allow(''),
+        mapLocation: Joi.object({
+            lat: Joi.number().required(),
+            lng: Joi.number().required()
+        }).optional()
     }).required(),
 
     category: Joi.string().valid('private', 'commercial').allow('', null),

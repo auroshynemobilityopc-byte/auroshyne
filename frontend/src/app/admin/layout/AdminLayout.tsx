@@ -26,6 +26,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ title }) => {
         if (location.pathname.includes("/users")) return "Customers";
         if (location.pathname.includes("/profile")) return "Profile";
         if (location.pathname.includes("/change-password")) return "Change Password";
+        if (location.pathname.includes("/settings")) return "Settings";
 
         return "Dashboard";
     };

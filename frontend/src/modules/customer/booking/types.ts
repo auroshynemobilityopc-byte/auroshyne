@@ -25,6 +25,10 @@ export interface BookingState {
         house: string;
         street: string;
         mobile: string;
+        mapLocation?: {
+            lat: number;
+            lng: number;
+        } | null;
     };
     paymentMode: "online" | "cash" | "upi" | null;
     isBulkBooking: boolean;

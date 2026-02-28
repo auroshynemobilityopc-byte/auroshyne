@@ -14,6 +14,7 @@ const dashboardRoutes = require('./src/modules/dashboard/dashboard.routes');
 const technicianJobsRoutes = require('./src/modules/technicians/jobs/technicianJobs.routes');
 const notificationRoutes = require('./src/modules/notifications/notification.routes');
 const discountRoutes = require('./src/modules/discounts/discount.routes');
+const settingRoutes = require('./src/modules/settings/setting.routes');
 const errorHandler = require('./src/common/middleware/error.middleware');
 const { globalLimiter } = require('./src/common/middleware/rateLimit.middleware');
 const cors = require('./src/config/cors');
@@ -79,6 +80,7 @@ app.use('/dashboard', dashboardRoutes);
 app.use('/technician-jobs', technicianJobsRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/discounts', discountRoutes);
+app.use('/settings', settingRoutes);
 app.use(errorHandler);
 
 module.exports = app;

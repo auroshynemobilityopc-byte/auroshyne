@@ -42,6 +42,10 @@ const bookingSchema = new mongoose.Schema(
             },
             address: { type: String, required: true },
             apartmentName: { type: String },
+            mapLocation: {
+                lat: { type: Number },
+                lng: { type: Number }
+            }
         },
 
         vehicles: [vehicleSchema],
@@ -93,6 +97,7 @@ const bookingSchema = new mongoose.Schema(
 
         totalAmount: { type: Number, required: true },
         discount: { type: Number, default: 0 },
+        tax: { type: Number, default: 0 },
         isBulk: { type: Boolean, default: false },
     },
     { timestamps: true }

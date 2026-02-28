@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
     ArrowLeft, MapPin, Car, Plus, Trash2, Home, Briefcase,
-    Bike, Truck, X
+    Bike, X
 } from "lucide-react";
 import { cn } from "../../lib/utils";
 import {
@@ -16,7 +16,7 @@ import {
 const VEHICLE_TYPES = [
     { value: "2W", label: "2-Wheeler", icon: Bike },
     { value: "4W", label: "4-Wheeler", icon: Car },
-    { value: "CAB", label: "Cab / SUV", icon: Truck },
+    { value: "CAB", label: "Cab / SUV", icon: Car },
 ];
 
 const labelIcons: Record<string, any> = { Home, Office: Briefcase };
@@ -161,7 +161,6 @@ export default function SavedDataPage() {
 
     const vehicleTypeIcon = (type: string) => {
         if (type === "2W") return <Bike className="w-4 h-4 text-brand-blue" />;
-        if (type === "CAB") return <Truck className="w-4 h-4 text-brand-blue" />;
         return <Car className="w-4 h-4 text-brand-blue" />;
     };
 

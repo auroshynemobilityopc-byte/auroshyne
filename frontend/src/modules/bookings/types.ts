@@ -51,6 +51,10 @@ export interface BookingDetails {
         name: string;
         mobile: string;
         address: string;
+        mapLocation?: {
+            lat: number;
+            lng: number;
+        };
     };
     vehicles: {
         number: string;

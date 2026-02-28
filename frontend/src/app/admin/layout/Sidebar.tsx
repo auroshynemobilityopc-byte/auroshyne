@@ -10,7 +10,8 @@ import {
     Layers,
     PlusSquare,
     UserCircle,
-    LogOut
+    LogOut,
+    Settings as SettingsIcon
 } from "lucide-react";
 
 interface MenuItem {
@@ -26,6 +27,7 @@ const menu: MenuItem[] = [
     { label: "Technicians", path: "/admin/technicians", icon: <Wrench className="w-4 h-4" /> },
     { label: "Services", path: "/admin/services", icon: <Layers className="w-4 h-4" /> },
     { label: "Add-ons", path: "/admin/addons", icon: <PlusSquare className="w-4 h-4" /> },
+    { label: "Settings", path: "/admin/settings", icon: <SettingsIcon className="w-4 h-4" /> },
 ];
 
 export const Sidebar: React.FC = () => {

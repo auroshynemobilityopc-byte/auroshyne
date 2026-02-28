@@ -1,14 +1,18 @@
 import { format } from "date-fns";
 import { cn, SLOTS } from "../../../lib/utils";
 import type { StepProps } from "../../types";
+import { useSettings } from "../../../../../modules/settings/hooks";
 
 export default function DateSlotStep({ booking, updateBooking }: StepProps) {
+    const { data: settingsData } = useSettings();
+    const daysToShow = settingsData?.data?.bookingDays || 7;
+
     return (
         <div className="space-y-8">
             <div>
                 <h2 className="text-xl font-bold mb-4">Select Date</h2>
                 <div className="flex gap-3 overflow-x-auto pb-4 no-scrollbar">
-                    {Array.from({ length: 7 }).map((_, i) => {
+                    {Array.from({ length: daysToShow }).map((_, i) => {
                         const date = new Date();
                         date.setDate(date.getDate() + i);
                         const isSelected = booking.date?.toDateString() === date.toDateString();

@@ -3,6 +3,7 @@ const Booking = require('./booking.model');
 const Service = require('../services/service.model');
 const Addon = require('../addons/addon.model');
 const Technician = require('../technicians/technician.model');
+const Setting = require('../settings/setting.model');
 const slotConfig = require('../../config/slot.config');
 const { AppError } = require('../../common/utils/appError');
 const notificationService = require('../notifications/notification.service');
@@ -65,7 +66,15 @@ const checkDuplicateVehicle = async (vehicles, date, slot, session) => {
 
 const checkSlotCapacityTx = async (date, slot, count, session) => {
     const existing = await Booking.countDocuments({ date, slot }).session(session);
-    const capacity = slotConfig[slot].capacity;
+    let capacity = slotConfig[slot]?.capacity || 20;
+
+    const setting = await Setting.findOne().session(session).lean();
+    if (setting && setting.slotsCount) {
+        const slotKey = slot.toLowerCase();
+        if (typeof setting.slotsCount[slotKey] === 'number') {
+            capacity = setting.slotsCount[slotKey];
+        }
+    }
 
     if (existing + count > capacity) {
         throw new AppError('Slot capacity exceeded', 400);
@@ -88,6 +97,9 @@ exports.createBooking = async (payload, userId) => {
     session.startTransaction();
 
     try {
+        const setting = await Setting.findOne().session(session).lean();
+        const taxPercentage = setting?.taxPercentage || 0;
+
         await checkDuplicateVehicle(payload.vehicles, payload.date, payload.slot, session);
         await checkSlotCapacityTx(payload.date, payload.slot, payload.vehicles.length, session);
 
@@ -121,7 +133,9 @@ exports.createBooking = async (payload, userId) => {
             );
         }
 
-        const finalAmount = totalAmount - discount;
+        let finalAmount = totalAmount - discount;
+        const tax = finalAmount * (taxPercentage / 100);
+        finalAmount = finalAmount + tax;
 
         const booking = await Booking.create(
             [
@@ -135,6 +149,7 @@ exports.createBooking = async (payload, userId) => {
                     vehicles,
                     totalAmount: finalAmount,
                     discount,
+                    tax,
                     isBulk: vehicles.length > 1,
                 },
             ],
@@ -159,6 +174,9 @@ exports.bulkBooking = async (payload, userId) => {
     session.startTransaction();
 
     try {
+        const setting = await Setting.findOne().session(session).lean();
+        const taxPercentage = setting?.taxPercentage || 0;
+
         for (const b of payload.bookings) {
             await checkDuplicateVehicle(b.vehicles, b.date, b.slot, session);
             await checkSlotCapacityTx(b.date, b.slot, b.vehicles.length, session);
@@ -197,7 +215,9 @@ exports.bulkBooking = async (payload, userId) => {
                 );
             }
 
-            const finalAmount = totalAmount - discount;
+            let finalAmount = totalAmount - discount;
+            const tax = finalAmount * (taxPercentage / 100);
+            finalAmount = finalAmount + tax;
 
             const booking = await Booking.create(
                 [
@@ -211,6 +231,7 @@ exports.bulkBooking = async (payload, userId) => {
                         vehicles,
                         totalAmount: finalAmount,
                         discount,
+                        tax,
                         isBulk: vehicles.length > 1,
                     },
                 ],

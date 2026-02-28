@@ -2,10 +2,13 @@ import { motion } from "motion/react";
 import { Link } from "react-router-dom";
 import { ArrowRight, Star, Shield, Clock, Sparkles, CheckCircle2, Play } from "lucide-react";
 import { useServices } from "../../booking/hooks";
+import { useSettings } from "../../../settings/hooks";
 
 export default function HomePage() {
     const { data: servicesResult } = useServices();
+    const { data: settingsData } = useSettings();
     const ALL_SERVICES = servicesResult?.data || [];
+    const videoLink = settingsData?.data?.videoLink;
 
     // Deduplicate by name and find the starting price
     const uniqueServicesMap = new Map();
@@ -68,9 +71,16 @@ export default function HomePage() {
                             >
                                 Book Now <ArrowRight className="w-5 h-5" />
                             </Link>
-                            <button className="hidden md:inline-flex items-center justify-center gap-2 bg-white/5 text-white px-8 py-4 rounded-xl font-bold hover:bg-white/10 transition-all border border-white/10 backdrop-blur-sm">
-                                <Play className="w-5 h-5 fill-current" /> Watch Process
-                            </button>
+                            {videoLink && (
+                                <a
+                                    href={videoLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="hidden md:inline-flex items-center justify-center gap-2 bg-white/5 text-white px-8 py-4 rounded-xl font-bold hover:bg-white/10 transition-all border border-white/10 backdrop-blur-sm"
+                                >
+                                    <Play className="w-5 h-5 fill-current" /> Watch Process
+                                </a>
+                            )}
                         </div>
                     </motion.div>
                 </div>

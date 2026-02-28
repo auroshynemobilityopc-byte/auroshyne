@@ -1,5 +1,21 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Copy, MapPin } from "lucide-react";
+import toast from "react-hot-toast";
+
+import { MapContainer, TileLayer, Marker } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import iconUrl from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
+
+const DefaultIcon = L.icon({
+    iconUrl,
+    shadowUrl: iconShadow,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+});
+L.Marker.prototype.options.icon = DefaultIcon;
 
 import { useBookingDetails } from "../hooks";
 import {
@@ -113,6 +129,59 @@ export const BookingDetailsPage = () => {
                         {booking.technicianId.mobile}
                     </div>
                 )}
+
+                {(() => {
+                    const loc = booking.customer.mapLocation;
+                    if (!loc || typeof loc.lat !== 'number' || typeof loc.lng !== 'number') return null;
+                    return (
+                        <div className="mt-4 space-y-2">
+                            <div className="flex items-center justify-between">
+                                <h3 className="text-xs font-semibold text-zinc-400 flex items-center gap-1.5">
+                                    <MapPin className="w-3.5 h-3.5" /> Pinned Location
+                                </h3>
+                                <button
+                                    onClick={() => {
+                                        const locStr = `https://www.google.com/maps?q=${loc.lat},${loc.lng}`;
+                                        if (navigator.clipboard && window.isSecureContext) {
+                                            navigator.clipboard.writeText(locStr);
+                                            toast.success("Location copied to clipboard!");
+                                        } else {
+                                            const textArea = document.createElement("textarea");
+                                            textArea.value = locStr;
+                                            document.body.appendChild(textArea);
+                                            textArea.focus();
+                                            textArea.select();
+                                            try {
+                                                document.execCommand('copy');
+                                                toast.success("Location copied to clipboard!");
+                                            } catch (err) {
+                                                toast.error("Failed to copy location.");
+                                            }
+                                            document.body.removeChild(textArea);
+                                        }
+                                    }}
+                                    className="flex items-center gap-1 text-xs text-brand-blue hover:text-brand-accent transition-colors"
+                                >
+                                    <Copy className="w-3.5 h-3.5" /> Copy
+                                </button>
+                            </div>
+                            <div className="h-[150px] w-full rounded-xl overflow-hidden border border-zinc-800 z-0 relative">
+                                <MapContainer
+                                    center={[loc.lat, loc.lng]}
+                                    zoom={15}
+                                    scrollWheelZoom={false}
+                                    style={{ height: "100%", width: "100%", zIndex: 0 }}
+                                >
+                                    <TileLayer
+                                        attribution='&copy; OpenStreetMap'
+                                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                    />
+                                    <Marker position={[loc.lat, loc.lng]} />
+                                </MapContainer>
+                            </div>
+                        </div>
+                    );
+                })()}
             </div>
 
             {/* 🧾 BILL / PRICE BREAKDOWN */}

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Car, Bike, Truck, Plus, Minus, BookMarked, ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
+import { Car, Bike, Plus, Minus, BookMarked, ChevronDown, ChevronUp, CheckCircle2 } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import type { StepProps, VehicleType, Vehicle } from "../../types";
 import { useSavedData } from "../../../profile/hooks";
@@ -43,7 +43,6 @@ export default function VehicleDetailsStep({ booking, updateBooking }: StepProps
 
     const vehicleTypeIcon = (type: string) => {
         if (type === "2W") return <Bike className="w-4 h-4" />;
-        if (type === "CAB") return <Truck className="w-4 h-4" />;
         return <Car className="w-4 h-4" />;
     };
 
@@ -165,7 +164,7 @@ export default function VehicleDetailsStep({ booking, updateBooking }: StepProps
                                             {[
                                                 { id: 'two-wheeler', label: '2W', icon: Bike },
                                                 { id: 'four-wheeler', label: '4W', icon: Car },
-                                                { id: 'cab', label: 'Cab', icon: Truck, hidden: booking.category === 'private' }
+                                                { id: 'cab', label: 'Cab', icon: Car, hidden: booking.category === 'private' }
                                             ].filter(t => !t.hidden).map((type) => (
                                                 <button
                                                     key={type.id}
