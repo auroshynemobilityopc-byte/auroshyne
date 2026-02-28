@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Drawer } from "../../../../components/shared/Drawer";
 import { Clock, MapPin, UserCheck, Phone, CheckCircle, X, Plus, Edit2, XCircle, RotateCcw, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
@@ -28,6 +28,15 @@ export const HistoryDetailsSheet = ({ booking, services, addons, open, onClose, 
 
     const cancelMutation = useCancelBooking(afterAction);
     const refundMutation = useRequestRefund(afterAction);
+
+    useEffect(() => {
+        if (!open) {
+            setConfirmCancel(false);
+            setShowRefundForm(false);
+            setRefundReason("");
+            setEditOpen(false);
+        }
+    }, [open]);
 
     if (!booking) return null;
 

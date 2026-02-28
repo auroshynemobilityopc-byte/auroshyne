@@ -1,3 +1,9 @@
+export interface HomeService {
+    serviceId: any;
+    image: string;
+    description: string;
+}
+
 export interface Setting {
     _id?: string;
     slotsCount: {
@@ -8,6 +14,7 @@ export interface Setting {
     bookingDays: number;
     taxPercentage: number;
     videoLink: string;
+    homeServices?: HomeService[];
     createdAt?: string;
     updatedAt?: string;
 }
@@ -26,4 +33,5 @@ export interface UpdateSettingPayload {
     bookingDays?: number;
     taxPercentage?: number;
     videoLink?: string;
+    homeServices?: { serviceId: string; image: string; description: string; }[];
 }

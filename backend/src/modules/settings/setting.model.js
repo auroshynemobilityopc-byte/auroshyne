@@ -10,6 +10,13 @@ const settingSchema = new mongoose.Schema(
         bookingDays: { type: Number, default: 7 },
         taxPercentage: { type: Number, default: 0 },
         videoLink: { type: String, default: '' },
+        homeServices: [
+            {
+                serviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Service' },
+                image: { type: String, default: '' },
+                description: { type: String, default: '' }
+            }
+        ],
     },
     { timestamps: true }
 );

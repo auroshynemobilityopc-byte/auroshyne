@@ -2,7 +2,7 @@ const Setting = require('./setting.model');
 const { AppError } = require('../../common/utils/appError');
 
 exports.getSettings = async () => {
-    let setting = await Setting.findOne();
+    let setting = await Setting.findOne().populate('homeServices.serviceId');
     if (!setting) {
         // Create initial config if it doesn't exist
         setting = await Setting.create({});
@@ -27,7 +27,7 @@ exports.updateSettings = async (updateData) => {
     const updatedSetting = await Setting.findByIdAndUpdate(setting._id, updateData, {
         new: true,
         runValidators: true,
-    });
+    }).populate('homeServices.serviceId');
 
     return updatedSetting;
 };

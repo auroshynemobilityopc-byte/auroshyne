@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { ArrowRight, Star, Shield, Clock, Sparkles, CheckCircle2, Play } from "lucide-react";
 import { useServices } from "../../booking/hooks";
 import { useSettings } from "../../../settings/hooks";
+import p1 from "../../../../assets/p1.avif";
 
 export default function HomePage() {
     const { data: servicesResult } = useServices();
@@ -23,6 +24,27 @@ export default function HomePage() {
         }
     });
     const SERVICES = Array.from(uniqueServicesMap.values());
+
+    const rawHomeServices = settingsData?.data?.homeServices || [];
+    const validHomeServices = rawHomeServices.filter((hs: any) => hs.serviceId && (typeof hs.serviceId === 'object' ? hs.serviceId._id : hs.serviceId) !== "");
+
+    const DISPLAY_SERVICES = validHomeServices.length > 0
+        ? validHomeServices.map((hs: any, i: number) => {
+            const srv = typeof hs.serviceId === 'object' ? hs.serviceId : ALL_SERVICES.find((s: any) => s._id === hs.serviceId);
+            return {
+                _id: srv?._id || `featured-${i}`,
+                name: srv?.name || 'Loading...',
+                description: hs.description || srv?.description || 'No description provided.',
+                price: srv?.price || 0,
+                image: hs.image || `https://source.unsplash.com/random/800x600?car-wash&sig=${i}`,
+                benefit: srv?.benefit || 'Premium Quality',
+                recommended: srv?.recommended || 'Every month'
+            };
+        }).slice(0, 3)
+        : SERVICES.slice(0, 3).map((srv: any, i: number) => ({
+            ...srv,
+            image: `https://source.unsplash.com/random/800x600?car-wash&sig=${i}`
+        }));
 
     return (
         <div className="pb-20 md:pb-0">
@@ -126,7 +148,7 @@ export default function HomePage() {
                     </div>
 
                     <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-3 md:gap-8">
-                        {SERVICES.slice(0, 3).map((service: any, i: number) => (
+                        {DISPLAY_SERVICES.map((service: any, i: number) => (
                             <motion.div
                                 key={service._id}
                                 initial={{ opacity: 0, y: 20 }}
@@ -136,7 +158,7 @@ export default function HomePage() {
                             >
                                 <div className="w-24 h-24 md:w-full md:h-64 bg-charcoal-900 rounded-xl md:rounded-none flex-shrink-0 relative overflow-hidden">
                                     <img
-                                        src={`https://source.unsplash.com/random/800x600?car-wash&sig=${i}`}
+                                        src={service.image}
                                         alt={service.name}
                                         className="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform duration-500"
                                         onError={(e) => {
@@ -208,7 +230,7 @@ export default function HomePage() {
                     <div className="relative">
                         <div className="absolute -inset-4 bg-brand-blue/20 rounded-3xl blur-2xl" />
                         <img
-                            src="https://images.unsplash.com/photo-1605164661537-84af99c9632e?q=80&w=1200&auto=format&fit=crop"
+                            src={p1}
                             alt="Detailing Process"
                             className="relative rounded-3xl shadow-2xl border border-white/10"
                         />

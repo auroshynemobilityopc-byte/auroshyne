@@ -3,6 +3,7 @@ import { toast } from "react-hot-toast";
 import { Save, Settings2 } from "lucide-react";
 
 import { useSettings, useUpdateSettings } from "../../../modules/settings/hooks";
+import { useServices } from "../../../modules/services/hooks";
 import type { UpdateSettingPayload } from "../../../modules/settings/types";
 
 import { Card } from "../../../components/shared/Card";
@@ -15,6 +16,10 @@ export const SettingsPage: React.FC = () => {
     const { data: settingsData, isLoading } = useSettings();
     const updateSettings = useUpdateSettings();
 
+    // Fetch services to allow selection
+    const { data: servicesRes } = useServices();
+    const servicesList = servicesRes?.data || [];
+
     const [formData, setFormData] = useState<UpdateSettingPayload>({
         slotsCount: {
             morning: 0,
@@ -24,10 +29,23 @@ export const SettingsPage: React.FC = () => {
         bookingDays: 7,
         taxPercentage: 0,
         videoLink: "",
+        homeServices: [
+            { serviceId: "", image: "", description: "" },
+            { serviceId: "", image: "", description: "" },
+            { serviceId: "", image: "", description: "" },
+        ],
     });
 
     useEffect(() => {
         if (settingsData?.data) {
+            const hs = settingsData.data.homeServices || [];
+            // default 3 empty slots if not fully populated
+            const paddedHs = Array.from({ length: 3 }).map((_, i) => ({
+                serviceId: hs[i]?.serviceId?._id || hs[i]?.serviceId || "",
+                image: hs[i]?.image || "",
+                description: hs[i]?.description || "",
+            }));
+
             setFormData({
                 slotsCount: {
                     morning: settingsData.data.slotsCount?.morning || 0,
@@ -37,6 +55,7 @@ export const SettingsPage: React.FC = () => {
                 bookingDays: settingsData.data.bookingDays || 7,
                 taxPercentage: settingsData.data.taxPercentage || 0,
                 videoLink: settingsData.data.videoLink || "",
+                homeServices: paddedHs,
             });
         }
     }, [settingsData]);
@@ -60,10 +79,22 @@ export const SettingsPage: React.FC = () => {
         }));
     };
 
+    const handleHomeServiceChange = (index: number, field: string, value: string) => {
+        setFormData((prev) => {
+            const updated = [...(prev.homeServices || [])];
+            updated[index] = { ...updated[index], [field]: value };
+            return { ...prev, homeServices: updated };
+        });
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            await updateSettings.mutateAsync(formData);
+            const payload = {
+                ...formData,
+                homeServices: formData.homeServices?.filter(hs => hs.serviceId && hs.serviceId !== "")
+            };
+            await updateSettings.mutateAsync(payload);
             toast.success("Settings updated successfully");
         } catch (error: any) {
             toast.error(error?.response?.data?.message || "Failed to update settings");
@@ -175,6 +206,49 @@ export const SettingsPage: React.FC = () => {
                         placeholder="https://youtube.com/..."
                     />
                 </FormField>
+            </Card>
+            <Card className="p-6">
+                <h2 className="text-lg font-semibold text-white mb-4">Featured Home Services</h2>
+                <p className="text-sm text-zinc-400 mb-6">Select 3 services to feature on the home screen along with custom descriptions and images.</p>
+
+                <div className="space-y-8">
+                    {formData.homeServices?.map((hs, index) => (
+                        <div key={index} className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-4">
+                            <h3 className="text-brand-blue font-bold">Featured Service {index + 1}</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <FormField label="Select Service">
+                                    <select
+                                        value={hs.serviceId}
+                                        onChange={(e) => handleHomeServiceChange(index, "serviceId", e.target.value)}
+                                        className="w-full bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-blue transition-colors"
+                                    >
+                                        <option value="" disabled>-- Select a Service --</option>
+                                        {servicesList.map((srv: any) => (
+                                            <option key={srv._id} value={srv._id}>{srv.name} (₹{srv.price})</option>
+                                        ))}
+                                    </select>
+                                </FormField>
+                                <FormField label="Custom Image URL">
+                                    <Input
+                                        type="url"
+                                        value={hs.image}
+                                        onChange={(e) => handleHomeServiceChange(index, "image", e.target.value)}
+                                        placeholder="https://example.com/image.jpg"
+                                    />
+                                </FormField>
+                            </div>
+                            <FormField label="Custom Description">
+                                <textarea
+                                    value={hs.description}
+                                    onChange={(e) => handleHomeServiceChange(index, "description", e.target.value)}
+                                    placeholder="Short description for the home page..."
+                                    rows={2}
+                                    className="w-full bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 resize-none focus:outline-none focus:border-brand-blue transition-colors"
+                                />
+                            </FormField>
+                        </div>
+                    ))}
+                </div>
             </Card>
         </form>
     );
