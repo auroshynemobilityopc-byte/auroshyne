@@ -11,11 +11,11 @@ const discountService = require('../discounts/discount.service');
 
 /* ---------------- HELPERS ---------------- */
 
-const { Cashfree } = require("cashfree-pg");
+const { Cashfree, CFEnvironment } = require("cashfree-pg");
 
 Cashfree.XClientId = process.env.CASHFREE_APP_ID;
 Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
-Cashfree.XEnvironment = process.env.CASHFREE_ENVIRONMENT === "PRODUCTION" ? Cashfree.Environment.PRODUCTION : Cashfree.Environment.SANDBOX;
+Cashfree.XEnvironment = process.env.CASHFREE_ENVIRONMENT === "PRODUCTION" ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX;
 
 const calculateVehiclePrice = async (vehicle) => {
     const service = await Service.findById(vehicle.serviceId).lean();
