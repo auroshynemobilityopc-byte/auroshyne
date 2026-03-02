@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createBooking, getMyBookings, getServices, getAddons, cancelBooking, requestRefund, updateBookingByCustomer, createCashfreeOrderApi, verifyCashfreePaymentApi } from "./api";
+import { createBooking, getMyBookings, getServices, getAddons, cancelBooking, requestRefund, updateBookingByCustomer, createCashfreeOrderApi, verifyCashfreePaymentApi, deleteFailedBookingApi } from "./api";
 import toast from "react-hot-toast";
 import { saveCustomerData, getCustomerData } from "../../../lib/customerIndexedDB";
 
@@ -142,5 +142,14 @@ export const useVerifyCashfreePayment = (onSuccess?: () => void) => {
         onError: (error: any) => {
             toast.error(error.response?.data?.message || "Failed to verify payment.");
         },
+    });
+};
+
+export const useDeleteFailedBooking = () => {
+    return useMutation({
+        mutationFn: (bookingId: string) => deleteFailedBookingApi(bookingId),
+        onError: (error: any) => {
+            console.error("Failed to cleanup failed booking:", error);
+        }
     });
 };

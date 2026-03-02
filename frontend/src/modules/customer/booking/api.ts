@@ -49,3 +49,8 @@ export const verifyCashfreePaymentApi = async (orderId: string) => {
     const response = await customerApi.post("/bookings/payment/verify", { orderId });
     return response.data;
 };
+
+export const deleteFailedBookingApi = async (bookingId: string) => {
+    const response = await customerApi.delete(`/bookings/payment/failed-booking/${bookingId}`);
+    return response.data;
+};

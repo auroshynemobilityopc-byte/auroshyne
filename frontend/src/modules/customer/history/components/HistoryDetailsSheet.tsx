@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { Drawer } from "../../../../components/shared/Drawer";
-import { Clock, MapPin, UserCheck, Phone, CheckCircle, X, Plus, Edit2, XCircle, RotateCcw, AlertTriangle } from "lucide-react";
+import { Clock, MapPin, UserCheck, Phone, CheckCircle, X, Plus, Edit2, XCircle, RotateCcw, AlertTriangle, CreditCard, Smartphone } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "../../lib/utils";
-import { useCancelBooking, useRequestRefund } from "../../booking/hooks";
+import { useCancelBooking, useRequestRefund, useCreateCashfreeOrder, useVerifyCashfreePayment } from "../../booking/hooks";
+import { toast } from "react-hot-toast";
+// @ts-ignore
+import { load } from "@cashfreepayments/cashfree-js";
 import { EditBookingSheet } from "./EditBookingSheet";
 
 interface Props {
@@ -19,6 +22,7 @@ export const HistoryDetailsSheet = ({ booking, services, addons, open, onClose, 
     const [editOpen, setEditOpen] = useState(false);
     const [refundReason, setRefundReason] = useState("");
     const [showRefundForm, setShowRefundForm] = useState(false);
+    const [showPaymentForm, setShowPaymentForm] = useState(false);
     const [confirmCancel, setConfirmCancel] = useState(false);
 
     const afterAction = () => {
@@ -38,6 +42,9 @@ export const HistoryDetailsSheet = ({ booking, services, addons, open, onClose, 
         }
     }, [open]);
 
+    const { mutateAsync: createOrderAsync, isPending: isCreatingOrder } = useCreateCashfreeOrder();
+    const { mutateAsync: verifyPaymentAsync, isPending: isVerifying } = useVerifyCashfreePayment();
+
     if (!booking) return null;
 
     const isCompleted = booking.status === "COMPLETED";
@@ -47,9 +54,41 @@ export const HistoryDetailsSheet = ({ booking, services, addons, open, onClose, 
     const canEdit = false; // isPending; (Hidden for now based on request)
     const canCancel = isPending;
     const canRefund = isCancelled && booking.payment?.status === "PAID";
+    const canPayNow = booking.payment?.status !== "PAID" && !isCancelled;
 
     const handleRefund = () => {
         refundMutation.mutate({ bookingId: booking.bookingId, reason: refundReason });
+    };
+
+    const handlePay = async (mode: 'online' | 'upi') => {
+        try {
+            const orderData = await createOrderAsync(booking.bookingId);
+            const paymentSessionId = orderData?.data?.payment_session_id;
+            const orderId = orderData?.data?.order_id;
+
+            if (!paymentSessionId) throw new Error("Could not initialize payment");
+
+            const cashfree = await load({ mode: "sandbox" });
+
+            cashfree.checkout({
+                paymentSessionId,
+                redirectTarget: "_modal",
+            }).then(async (result: any) => {
+                if (result.error) {
+                    toast.error(result.error.message || "Payment failed");
+                } else if (result.paymentDetails || result.redirect === false) {
+                    try {
+                        await verifyPaymentAsync(orderId);
+                        afterAction(); // Refresh data
+                    } catch (vErr) {
+                        toast.error("Verification failed. Please contact support.");
+                    }
+                }
+            });
+
+        } catch (err) {
+            toast.error("An error occurred starting payment.");
+        }
     };
 
     return (
@@ -83,6 +122,18 @@ export const HistoryDetailsSheet = ({ booking, services, addons, open, onClose, 
                         {/* Action Buttons */}
                         {(canEdit || canCancel || canRefund) && (
                             <div className="flex gap-2 flex-wrap">
+                                {canPayNow && (
+                                    <button
+                                        onClick={() => {
+                                            setShowPaymentForm(v => !v);
+                                            setShowRefundForm(false);
+                                            setConfirmCancel(false);
+                                        }}
+                                        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-green-500/10 hover:bg-green-500/20 text-green-400 border border-green-500/20 text-sm font-medium transition-colors"
+                                    >
+                                        <CreditCard className="w-4 h-4" /> Pay Now
+                                    </button>
+                                )}
                                 {canEdit && (
                                     <button
                                         onClick={() => setEditOpen(true)}
@@ -93,7 +144,10 @@ export const HistoryDetailsSheet = ({ booking, services, addons, open, onClose, 
                                 )}
                                 {canCancel && (
                                     <button
-                                        onClick={() => setConfirmCancel(true)}
+                                        onClick={() => {
+                                            setConfirmCancel(true);
+                                            setShowPaymentForm(false);
+                                        }}
                                         className="flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-sm font-medium transition-colors"
                                     >
                                         <XCircle className="w-4 h-4" /> Cancel
@@ -101,7 +155,10 @@ export const HistoryDetailsSheet = ({ booking, services, addons, open, onClose, 
                                 )}
                                 {canRefund && (
                                     <button
-                                        onClick={() => setShowRefundForm(v => !v)}
+                                        onClick={() => {
+                                            setShowRefundForm(v => !v);
+                                            setShowPaymentForm(false);
+                                        }}
                                         className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 text-purple-400 border border-purple-500/20 text-sm font-medium transition-colors"
                                     >
                                         <RotateCcw className="w-4 h-4" /> Request Refund
@@ -133,6 +190,34 @@ export const HistoryDetailsSheet = ({ booking, services, addons, open, onClose, 
                                         Keep Booking
                                     </button>
                                 </div>
+                            </div>
+                        )}
+
+                        {/* Payment Form */}
+                        {showPaymentForm && (
+                            <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 space-y-3">
+                                <p className="text-sm font-semibold text-green-400 mb-2">Select Payment Method</p>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button
+                                        onClick={() => handlePay('online')}
+                                        disabled={isCreatingOrder || isVerifying}
+                                        className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-brand-blue/50 transition-all text-sm font-medium disabled:opacity-50"
+                                    >
+                                        <CreditCard className="w-6 h-6 text-brand-blue" />
+                                        <span>Card / NetBanking</span>
+                                    </button>
+                                    <button
+                                        onClick={() => handlePay('upi')}
+                                        disabled={isCreatingOrder || isVerifying}
+                                        className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-brand-blue/50 transition-all text-sm font-medium disabled:opacity-50"
+                                    >
+                                        <Smartphone className="w-6 h-6 text-brand-blue" />
+                                        <span>UPI</span>
+                                    </button>
+                                </div>
+                                {(isCreatingOrder || isVerifying) && (
+                                    <p className="text-xs text-center text-text-grey mt-2 animate-pulse">Processing payment...</p>
+                                )}
                             </div>
                         )}
 

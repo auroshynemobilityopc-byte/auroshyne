@@ -3,6 +3,29 @@ import { Drawer } from "../../../components/shared/Drawer";
 import { Button } from "../../../components/shared/Button";
 import { useCreateBooking } from "../hooks";
 import { useServices } from "../../services/hooks";
+import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
+import L from "leaflet";
+import iconUrl from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
+
+const DefaultIcon = L.icon({
+    iconUrl,
+    shadowUrl: iconShadow,
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+});
+L.Marker.prototype.options.icon = DefaultIcon;
+
+function LocationMarker({ position, setPosition }: { position: L.LatLng | null; setPosition: (p: L.LatLng) => void }) {
+    useMapEvents({
+        click(e) {
+            setPosition(e.latlng);
+        },
+    });
+
+    return position === null ? null : <Marker position={position}></Marker>;
+}
 
 interface AddBookingSheetProps {
     open: boolean;
@@ -21,6 +44,7 @@ export const AddBookingSheet = ({ open, onClose, onSuccess }: AddBookingSheetPro
         customerMobile: "",
         customerAddress: "",
         apartmentName: "",
+        mapLocation: null as { lat: number; lng: number } | null,
         category: "private",
         paymentMode: "cash",
         date: new Date().toISOString().split("T")[0],
@@ -63,7 +87,8 @@ export const AddBookingSheet = ({ open, onClose, onSuccess }: AddBookingSheetPro
                 name: formData.customerName,
                 mobile: formData.customerMobile,
                 address: formData.customerAddress,
-                apartmentName: formData.apartmentName || ""
+                apartmentName: formData.apartmentName || "",
+                mapLocation: formData.mapLocation || undefined
             },
             category: formData.category,
             paymentMode: formData.paymentMode,
@@ -125,6 +150,27 @@ export const AddBookingSheet = ({ open, onClose, onSuccess }: AddBookingSheetPro
                             onChange={e => handleChange("apartmentName", e.target.value)}
                             className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white"
                         />
+                        <div className="space-y-2 mt-4">
+                            <label className="text-xs text-zinc-400 block pb-1">Pin Location on Map</label>
+                            <div className="h-[200px] w-full rounded-lg overflow-hidden border border-zinc-700 z-0 relative">
+                                <MapContainer
+                                    center={formData.mapLocation ? [formData.mapLocation.lat, formData.mapLocation.lng] : [17.3850, 78.4867]}
+                                    zoom={13}
+                                    scrollWheelZoom={true}
+                                    style={{ height: "100%", width: "100%", zIndex: 0 }}
+                                >
+                                    <TileLayer
+                                        attribution='&copy; OpenStreetMap contributors'
+                                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                    />
+                                    <LocationMarker
+                                        position={formData.mapLocation ? L.latLng(formData.mapLocation.lat, formData.mapLocation.lng) : null}
+                                        setPosition={(p) => handleChange("mapLocation", { lat: p.lat, lng: p.lng })}
+                                    />
+                                </MapContainer>
+                            </div>
+                            <p className="text-xs text-zinc-500">Click anywhere on the map to drop a pin.</p>
+                        </div>
                     </div>
 
                     <div className="space-y-3">

@@ -116,7 +116,22 @@ exports.createCashfreeOrder = asyncHandler(async (req, res) => {
 
 exports.verifyCashfreePayment = asyncHandler(async (req, res) => {
     const { orderId } = req.body;
-    if (!orderId) throw new AppError('orderId is required', 400);
-    const data = await bookingService.verifyCashfreePayment(orderId);
-    res.status(200).json({ success: true, data });
+    if (!orderId) throw new AppError('Order ID is required', 400);
+
+    const paymentData = await bookingService.verifyCashfreePayment(orderId);
+
+    res.status(200).json({
+        success: true,
+        data: paymentData,
+    });
+});
+
+exports.deleteFailedBooking = asyncHandler(async (req, res) => {
+    const { bookingId } = req.params;
+    await bookingService.deleteFailedBooking(bookingId, req.user._id);
+
+    res.status(200).json({
+        success: true,
+        message: 'Abandoned booking removed seamlessly.'
+    });
 });

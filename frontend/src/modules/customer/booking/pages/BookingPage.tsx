@@ -4,7 +4,7 @@ import { ChevronRight, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
-import { useCreateBooking, useServices, useAddons, useCreateCashfreeOrder, useVerifyCashfreePayment } from "../hooks";
+import { useCreateBooking, useServices, useAddons, useCreateCashfreeOrder, useVerifyCashfreePayment, useDeleteFailedBooking } from "../hooks";
 import { useCustomerAuth } from "../../../../app/customer/CustomerAuthContext";
 // @ts-ignore
 import { load } from "@cashfreepayments/cashfree-js";
@@ -26,6 +26,7 @@ export default function BookingPage() {
     const { mutate: createBooking, isPending } = useCreateBooking();
     const { mutateAsync: createCashfreeOrderAsync, isPending: isOrderPending } = useCreateCashfreeOrder();
     const { mutateAsync: verifyCashfreePaymentAsync, isPending: isVerifyPending } = useVerifyCashfreePayment();
+    const { mutateAsync: deleteFailedBookingAsync } = useDeleteFailedBooking();
     const { data: servicesResult, isLoading: loadingServices } = useServices();
     const { data: addonsResult, isLoading: loadingAddons } = useAddons();
 
@@ -269,22 +270,26 @@ export default function BookingPage() {
                                                     }).then(async (result: any) => {
                                                         if (result.error) {
                                                             toast.error(result.error.message || "Payment failed or was cancelled.");
-                                                            navigate("/history"); // take them to history so they can retry payment later
-                                                            localStorage.removeItem('bookingState');
-                                                        }
-                                                        if (result.paymentDetails || result.redirect === false) {
+                                                            // Delete the abandoned booking
+                                                            await deleteFailedBookingAsync(bookingId);
+                                                            // Stay on the booking page so they can retry
+                                                        } else if (result.paymentDetails || result.redirect === false) {
                                                             // Verify the payment
-                                                            await verifyCashfreePaymentAsync(orderId);
-                                                            localStorage.removeItem('bookingState');
-                                                            navigate("/history");
+                                                            try {
+                                                                await verifyCashfreePaymentAsync(orderId);
+                                                                localStorage.removeItem('bookingState');
+                                                                navigate("/history");
+                                                            } catch (verifyErr) {
+                                                                toast.error("Payment verification failed. Please check history or contact support.");
+                                                            }
                                                         }
                                                     });
 
                                                 } catch (err: any) {
                                                     console.error("Payment Error:", err);
                                                     toast.error("An error occurred starting payment.");
-                                                    localStorage.removeItem('bookingState');
-                                                    navigate("/history");
+                                                    await deleteFailedBookingAsync(bookingId);
+                                                    // Stay on page on error
                                                 }
                                             } else {
                                                 // CASH payment mode or missing ID

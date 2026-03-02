@@ -48,4 +48,12 @@ router.patch('/my/edit', allowRoles(CUSTOMER), bookingLimiter, bookingController
 router.post('/payment/create-order', allowRoles(CUSTOMER), bookingLimiter, bookingController.createCashfreeOrder);
 router.post('/payment/verify', allowRoles(CUSTOMER), bookingLimiter, bookingController.verifyCashfreePayment);
 
+router.delete(
+    '/payment/failed-booking/:bookingId',
+    protect,
+    allowRoles(CUSTOMER),
+    bookingLimiter,
+    bookingController.deleteFailedBooking
+);
+
 module.exports = router;

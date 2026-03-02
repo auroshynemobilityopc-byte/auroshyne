@@ -13,9 +13,11 @@ const discountService = require('../discounts/discount.service');
 
 const { Cashfree, CFEnvironment } = require("cashfree-pg");
 
-Cashfree.XClientId = process.env.CASHFREE_APP_ID;
-Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
-Cashfree.XEnvironment = process.env.CASHFREE_ENVIRONMENT === "PRODUCTION" ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX;
+const cashfree = new Cashfree(
+    process.env.CASHFREE_ENVIRONMENT === "PRODUCTION" ? CFEnvironment.PRODUCTION : CFEnvironment.SANDBOX,
+    process.env.CASHFREE_APP_ID,
+    process.env.CASHFREE_SECRET_KEY
+);
 
 const calculateVehiclePrice = async (vehicle) => {
     const service = await Service.findById(vehicle.serviceId).lean();
@@ -477,7 +479,7 @@ exports.createCashfreeOrder = async (bookingId, user) => {
     }
 
     const requestedOrder = {
-        order_amount: booking.totalAmount.toFixed(2),
+        order_amount: Number(booking.totalAmount.toFixed(2)),
         order_currency: "INR",
         order_id: `ORDER_${bookingId}_${Date.now()}`,
         customer_details: {
@@ -493,17 +495,17 @@ exports.createCashfreeOrder = async (bookingId, user) => {
     };
 
     try {
-        const response = await Cashfree.PGCreateOrder("2023-08-01", requestedOrder);
+        const response = await cashfree.PGCreateOrder(requestedOrder);
         return response.data; // this returns payment_session_id
     } catch (error) {
-        console.error("Cashfree Order Create Error:", error.response?.data || error.message);
-        throw new AppError("Failed to create cashfree order", 500);
+        console.error("Cashfree Order Create Error Details:", error.response?.data || error.message);
+        throw new AppError(error.response?.data?.message || "Failed to create cashfree order", 500);
     }
 };
 
 exports.verifyCashfreePayment = async (orderId) => {
     try {
-        const response = await Cashfree.PGFetchOrder("2023-08-01", orderId);
+        const response = await cashfree.PGFetchOrder(orderId);
 
         if (response.data.order_status === "PAID") {
             // Extract the original bookingId from our custom order_id: ORDER_{bookingId}_{timestamp}
@@ -525,4 +527,15 @@ exports.verifyCashfreePayment = async (orderId) => {
         console.error("Cashfree Order Fetch Error:", error.response?.data || error.message);
         throw new AppError("Failed to verify cashfree payment", 500);
     }
+};
+
+exports.deleteFailedBooking = async (bookingId, userId) => {
+    // Only allow hard delete if it's UNPAID and belongs to the user
+    const booking = await Booking.findOne({ bookingId, userId });
+    if (!booking) return true; // Already gone or unauthorized
+
+    if (booking.payment.status !== 'PAID') {
+        await Booking.deleteOne({ _id: booking._id });
+    }
+    return true;
 };
