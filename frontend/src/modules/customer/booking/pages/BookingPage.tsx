@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronRight, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-hot-toast";
 import { format } from "date-fns";
 import { useCreateBooking, useServices, useAddons } from "../hooks";
 import { useCustomerAuth } from "../../../../app/customer/CustomerAuthContext";
@@ -121,7 +122,10 @@ export default function BookingPage() {
             case 2: return booking.vehicles.every(v => v.number.length > 4);
             case 3: return booking.vehicles.every(v => v.serviceId);
             case 5: return booking.date && booking.slotId;
-            case 6: return booking.address.house.length > 0 && booking.address.mobile.length >= 10;
+            case 6:
+                // Don't disable the button completely for step 6 if just map location is missing 
+                // so we can show an alert on click. We still require house and mobile
+                return booking.address.house.length > 0 && booking.address.mobile.length >= 10;
             case 8: return booking.paymentMode;
             default: return true;
         }
@@ -203,6 +207,11 @@ export default function BookingPage() {
                         )}
                         <button
                             onClick={() => {
+                                if (step === 6 && !booking.address.mapLocation) {
+                                    toast.error("Please select a location on the map before continuing.");
+                                    return;
+                                }
+
                                 if (step === 8) {
                                     if (!booking.date || !booking.slotId) return;
 

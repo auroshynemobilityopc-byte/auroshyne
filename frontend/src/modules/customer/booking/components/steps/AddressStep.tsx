@@ -183,7 +183,6 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
                 <div className="space-y-2 mt-4">
                     <label className="text-sm text-text-grey font-medium flex items-center justify-between">
                         <span>Pin Location on Map {booking.address.mapLocation && <CheckCircle2 className="inline w-4 h-4 text-brand-blue ml-2" />}</span>
-                        <span className="text-xs text-brand-blue bg-brand-blue/10 px-2 py-0.5 rounded">Optional</span>
                     </label>
                     <div className="h-[250px] w-full rounded-2xl overflow-hidden border border-white/10 z-0 relative">
                         <MapContainer
