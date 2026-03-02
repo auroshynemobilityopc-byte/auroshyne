@@ -60,7 +60,7 @@ export const HistoryDetailsSheet = ({ booking, services, addons, open, onClose, 
         refundMutation.mutate({ bookingId: booking.bookingId, reason: refundReason });
     };
 
-    const handlePay = async (mode: 'online' | 'upi') => {
+    const handlePay = async () => {
         try {
             const orderData = await createOrderAsync(booking.bookingId);
             const paymentSessionId = orderData?.data?.payment_session_id;
@@ -199,7 +199,7 @@ export const HistoryDetailsSheet = ({ booking, services, addons, open, onClose, 
                                 <p className="text-sm font-semibold text-green-400 mb-2">Select Payment Method</p>
                                 <div className="grid grid-cols-2 gap-3">
                                     <button
-                                        onClick={() => handlePay('online')}
+                                        onClick={() => handlePay()}
                                         disabled={isCreatingOrder || isVerifying}
                                         className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-brand-blue/50 transition-all text-sm font-medium disabled:opacity-50"
                                     >
@@ -207,7 +207,7 @@ export const HistoryDetailsSheet = ({ booking, services, addons, open, onClose, 
                                         <span>Card / NetBanking</span>
                                     </button>
                                     <button
-                                        onClick={() => handlePay('upi')}
+                                        onClick={() => handlePay()}
                                         disabled={isCreatingOrder || isVerifying}
                                         className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-brand-blue/50 transition-all text-sm font-medium disabled:opacity-50"
                                     >
