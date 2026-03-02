@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronRight, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -27,8 +27,7 @@ export default function BookingPage() {
     const SERVICES = servicesResult?.data || [];
     const ADDONS = addonsResult?.data || [];
 
-    const [step, setStep] = useState<BookingStep>(1);
-    const [booking, setBooking] = useState<BookingState>({
+    const defaultBookingState: BookingState = {
         category: null,
         type: null,
         vehicles: [],
@@ -41,7 +40,30 @@ export default function BookingPage() {
         isBulkBooking: false,
         discountCode: null,
         discountValue: 0,
-    });
+    };
+
+    const getSavedState = () => {
+        try {
+            const saved = localStorage.getItem('bookingState');
+            if (saved) return JSON.parse(saved);
+        } catch (e) {
+            console.error("Failed to parse saved booking state", e);
+        }
+        return null;
+    };
+
+    const savedState = getSavedState();
+
+    const [step, setStep] = useState<BookingStep>(savedState?.step || 1);
+    const [booking, setBooking] = useState<BookingState>(savedState?.booking ? {
+        ...defaultBookingState,
+        ...savedState.booking,
+        date: savedState.booking.date ? new Date(savedState.booking.date) : null
+    } : defaultBookingState);
+
+    useEffect(() => {
+        localStorage.setItem('bookingState', JSON.stringify({ step, booking }));
+    }, [step, booking]);
 
     const nextStep = () => setStep((s) => Math.min(s + 1, 8) as BookingStep);
     const prevStep = () => setStep((s) => Math.max(s - 1, 1) as BookingStep);
@@ -111,19 +133,33 @@ export default function BookingPage() {
 
                 {/* LEFT COLUMN: STEPS */}
                 <div className="md:col-span-8">
-                    {/* Progress Bar */}
-                    <div className="mb-8">
-                        <div className="h-1 bg-white/10 rounded-full overflow-hidden">
-                            <motion.div
-                                className="h-full bg-brand-blue"
-                                initial={{ width: 0 }}
-                                animate={{ width: `${(step / 8) * 100}%` }}
-                            />
+                    {/* Progress Bar & Cancel Button */}
+                    <div className="mb-8 flex items-center justify-between gap-4">
+                        <div className="flex-1">
+                            <div className="h-1 bg-white/10 rounded-full overflow-hidden">
+                                <motion.div
+                                    className="h-full bg-brand-blue"
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${(step / 8) * 100}%` }}
+                                />
+                            </div>
+                            <div className="flex justify-between mt-2 text-xs text-text-grey font-mono">
+                                <span>Step {step} of 8</span>
+                                <span>{step === 8 ? 'Payment' : 'Booking'}</span>
+                            </div>
                         </div>
-                        <div className="flex justify-between mt-2 text-xs text-text-grey font-mono">
-                            <span>Step {step} of 8</span>
-                            <span>{step === 8 ? 'Payment' : 'Booking'}</span>
-                        </div>
+                        <button
+                            onClick={() => {
+                                if (window.confirm("Are you sure you want to cancel the booking and start over?")) {
+                                    localStorage.removeItem('bookingState');
+                                    setStep(1);
+                                    setBooking(defaultBookingState);
+                                }
+                            }}
+                            className="text-xs text-red-400 border border-red-500/30 px-3 py-1.5 rounded-lg hover:bg-red-500/10 transition-colors font-medium whitespace-nowrap"
+                        >
+                            Cancel / Restart
+                        </button>
                     </div>
 
                     <AnimatePresence mode="wait">
@@ -194,7 +230,10 @@ export default function BookingPage() {
                                     };
 
                                     createBooking(payload, {
-                                        onSuccess: () => navigate("/history")
+                                        onSuccess: () => {
+                                            localStorage.removeItem('bookingState');
+                                            navigate("/history");
+                                        }
                                     });
                                 } else {
                                     nextStep();
