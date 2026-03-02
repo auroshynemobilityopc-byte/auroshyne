@@ -44,4 +44,8 @@ router.patch('/my/cancel', allowRoles(CUSTOMER), bookingLimiter, bookingControll
 router.patch('/my/refund', allowRoles(CUSTOMER), bookingLimiter, bookingController.requestRefund);
 router.patch('/my/edit', allowRoles(CUSTOMER), bookingLimiter, bookingController.updateBookingByCustomer);
 
+// Payment Integration (Cashfree)
+router.post('/payment/create-order', allowRoles(CUSTOMER), bookingLimiter, bookingController.createCashfreeOrder);
+router.post('/payment/verify', allowRoles(CUSTOMER), bookingLimiter, bookingController.verifyCashfreePayment);
+
 module.exports = router;

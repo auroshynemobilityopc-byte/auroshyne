@@ -106,3 +106,17 @@ exports.updateBookingByCustomer = asyncHandler(async (req, res) => {
     const data = await bookingService.updateBookingByCustomer(bookingId, req.user._id, updates);
     res.status(200).json({ success: true, data });
 });
+
+exports.createCashfreeOrder = asyncHandler(async (req, res) => {
+    const { bookingId } = req.body;
+    if (!bookingId) throw new AppError('bookingId is required', 400);
+    const data = await bookingService.createCashfreeOrder(bookingId, req.user);
+    res.status(200).json({ success: true, data });
+});
+
+exports.verifyCashfreePayment = asyncHandler(async (req, res) => {
+    const { orderId } = req.body;
+    if (!orderId) throw new AppError('orderId is required', 400);
+    const data = await bookingService.verifyCashfreePayment(orderId);
+    res.status(200).json({ success: true, data });
+});

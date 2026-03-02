@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createBooking, getMyBookings, getServices, getAddons, cancelBooking, requestRefund, updateBookingByCustomer } from "./api";
+import { createBooking, getMyBookings, getServices, getAddons, cancelBooking, requestRefund, updateBookingByCustomer, createCashfreeOrderApi, verifyCashfreePaymentApi } from "./api";
 import toast from "react-hot-toast";
 import { saveCustomerData, getCustomerData } from "../../../lib/customerIndexedDB";
 
@@ -117,6 +117,30 @@ export const useUpdateBooking = (onSuccess?: () => void) => {
         },
         onError: (error: any) => {
             toast.error(error.response?.data?.message || "Failed to update booking");
+        },
+    });
+};
+
+export const useCreateCashfreeOrder = () => {
+    return useMutation({
+        mutationFn: (bookingId: string) => createCashfreeOrderApi(bookingId),
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || "Failed to initialize payment.");
+        },
+    });
+};
+
+export const useVerifyCashfreePayment = (onSuccess?: () => void) => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: (orderId: string) => verifyCashfreePaymentApi(orderId),
+        onSuccess: () => {
+            toast.success("Payment verified successfully!");
+            qc.invalidateQueries({ queryKey: ["myBookings"] });
+            onSuccess?.();
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || "Failed to verify payment.");
         },
     });
 };

@@ -4,8 +4,10 @@ import { ChevronRight, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
-import { useCreateBooking, useServices, useAddons } from "../hooks";
+import { useCreateBooking, useServices, useAddons, useCreateCashfreeOrder, useVerifyCashfreePayment } from "../hooks";
 import { useCustomerAuth } from "../../../../app/customer/CustomerAuthContext";
+// @ts-ignore
+import { load } from "@cashfreepayments/cashfree-js";
 
 import type { BookingState, BookingStep } from "../types";
 import CategoryStep from "../components/steps/CategoryStep";
@@ -22,8 +24,12 @@ export default function BookingPage() {
     const navigate = useNavigate();
     const { user } = useCustomerAuth();
     const { mutate: createBooking, isPending } = useCreateBooking();
+    const { mutateAsync: createCashfreeOrderAsync, isPending: isOrderPending } = useCreateCashfreeOrder();
+    const { mutateAsync: verifyCashfreePaymentAsync, isPending: isVerifyPending } = useVerifyCashfreePayment();
     const { data: servicesResult, isLoading: loadingServices } = useServices();
     const { data: addonsResult, isLoading: loadingAddons } = useAddons();
+
+    const isProcessing = isPending || isOrderPending || isVerifyPending;
 
     const SERVICES = servicesResult?.data || [];
     const ADDONS = addonsResult?.data || [];
@@ -239,20 +245,63 @@ export default function BookingPage() {
                                     };
 
                                     createBooking(payload, {
-                                        onSuccess: () => {
-                                            localStorage.removeItem('bookingState');
-                                            navigate("/history");
+                                        onSuccess: async (data: any) => {
+                                            const bookingId = data?.data?.bookingId;
+
+                                            if ((payload.paymentMode === 'online' || payload.paymentMode === 'upi') && bookingId) {
+                                                try {
+                                                    // 1. Create order and get session ID
+                                                    const orderData = await createCashfreeOrderAsync(bookingId);
+                                                    const paymentSessionId = orderData?.data?.payment_session_id;
+                                                    const orderId = orderData?.data?.order_id;
+
+                                                    if (!paymentSessionId) {
+                                                        throw new Error("Could not initialize payment session.");
+                                                    }
+
+                                                    // 2. Load SDK
+                                                    const cashfree = await load({ mode: "sandbox" });
+
+                                                    // 3. Start Checkout
+                                                    cashfree.checkout({
+                                                        paymentSessionId,
+                                                        redirectTarget: "_modal",
+                                                    }).then(async (result: any) => {
+                                                        if (result.error) {
+                                                            toast.error(result.error.message || "Payment failed or was cancelled.");
+                                                            navigate("/history"); // take them to history so they can retry payment later
+                                                            localStorage.removeItem('bookingState');
+                                                        }
+                                                        if (result.paymentDetails || result.redirect === false) {
+                                                            // Verify the payment
+                                                            await verifyCashfreePaymentAsync(orderId);
+                                                            localStorage.removeItem('bookingState');
+                                                            navigate("/history");
+                                                        }
+                                                    });
+
+                                                } catch (err: any) {
+                                                    console.error("Payment Error:", err);
+                                                    toast.error("An error occurred starting payment.");
+                                                    localStorage.removeItem('bookingState');
+                                                    navigate("/history");
+                                                }
+                                            } else {
+                                                // CASH payment mode or missing ID
+                                                localStorage.removeItem('bookingState');
+                                                navigate("/history");
+                                            }
                                         }
                                     });
                                 } else {
                                     nextStep();
                                 }
                             }}
-                            disabled={!canProceed() || isPending}
+                            disabled={!canProceed() || isProcessing}
                             className="flex-1 md:flex-none md:w-64 bg-brand-blue hover:bg-brand-accent disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl p-4 md:px-8 md:py-3 flex items-center justify-center gap-2 transition-all shadow-lg shadow-brand-blue/20"
                         >
-                            {isPending ? 'Processing...' : (step === 8 ? 'Confirm Booking' : 'Continue')}
-                            {!isPending && step !== 8 && <ChevronRight className="w-5 h-5" />}
+                            {isProcessing ? 'Processing...' : (step === 8 ? 'Confirm Booking' : 'Continue')}
+                            {!isProcessing && step !== 8 && <ChevronRight className="w-5 h-5" />}
                         </button>
                     </div>
                 </div>

@@ -11,6 +11,12 @@ const discountService = require('../discounts/discount.service');
 
 /* ---------------- HELPERS ---------------- */
 
+const { Cashfree } = require("cashfree-pg");
+
+Cashfree.XClientId = process.env.CASHFREE_APP_ID;
+Cashfree.XClientSecret = process.env.CASHFREE_SECRET_KEY;
+Cashfree.XEnvironment = process.env.CASHFREE_ENVIRONMENT === "PRODUCTION" ? Cashfree.Environment.PRODUCTION : Cashfree.Environment.SANDBOX;
+
 const calculateVehiclePrice = async (vehicle) => {
     const service = await Service.findById(vehicle.serviceId).lean();
     if (!service || !service.isActive) {
@@ -458,4 +464,65 @@ exports.requestRefund = async (bookingId, userId, reason) => {
 
     await booking.save();
     return booking;
+};
+
+/* ---------------- ONLINE PAYMENT (CASHFREE) ---------------- */
+
+exports.createCashfreeOrder = async (bookingId, user) => {
+    const booking = await Booking.findOne({ bookingId });
+    if (!booking) throw new AppError('Booking not found', 404);
+
+    if (booking.payment.status === 'PAID') {
+        throw new AppError('Booking is already paid', 400);
+    }
+
+    const requestedOrder = {
+        order_amount: booking.totalAmount.toFixed(2),
+        order_currency: "INR",
+        order_id: `ORDER_${bookingId}_${Date.now()}`,
+        customer_details: {
+            customer_id: user._id.toString(),
+            customer_phone: user.mobile || "9999999999",
+            customer_name: user.name || "Customer",
+            customer_email: user.email || "test@test.com",
+        },
+        order_meta: {
+            // we can add return URL if we want, but since we are verifying from frontend/backend we just let SDK handle it.
+            // return_url: `http://localhost:5173/payment/verify?order_id={order_id}`
+        }
+    };
+
+    try {
+        const response = await Cashfree.PGCreateOrder("2023-08-01", requestedOrder);
+        return response.data; // this returns payment_session_id
+    } catch (error) {
+        console.error("Cashfree Order Create Error:", error.response?.data || error.message);
+        throw new AppError("Failed to create cashfree order", 500);
+    }
+};
+
+exports.verifyCashfreePayment = async (orderId) => {
+    try {
+        const response = await Cashfree.PGFetchOrder("2023-08-01", orderId);
+
+        if (response.data.order_status === "PAID") {
+            // Extract the original bookingId from our custom order_id: ORDER_{bookingId}_{timestamp}
+            const parts = orderId.split('_');
+            const bookingId = parts[1];
+
+            if (bookingId) {
+                const booking = await Booking.findOne({ bookingId });
+                if (booking && booking.payment.status !== 'PAID') {
+                    booking.payment.status = 'PAID';
+                    booking.payment.transactionId = orderId;
+                    await booking.save();
+                }
+            }
+        }
+
+        return response.data;
+    } catch (error) {
+        console.error("Cashfree Order Fetch Error:", error.response?.data || error.message);
+        throw new AppError("Failed to verify cashfree payment", 500);
+    }
 };

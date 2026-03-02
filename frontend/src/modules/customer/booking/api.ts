@@ -39,3 +39,13 @@ export const validateDiscount = async (data: { code: string; orderValue: number 
     const response = await customerApi.post("/discounts/validate", data);
     return response.data;
 };
+
+export const createCashfreeOrderApi = async (bookingId: string) => {
+    const response = await customerApi.post("/bookings/payment/create-order", { bookingId });
+    return response.data;
+};
+
+export const verifyCashfreePaymentApi = async (orderId: string) => {
+    const response = await customerApi.post("/bookings/payment/verify", { orderId });
+    return response.data;
+};
