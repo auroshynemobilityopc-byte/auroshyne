@@ -1,5 +1,5 @@
 import React from "react";
-import { Bell, MoreVertical, Download } from "lucide-react";
+import { Bell, MoreVertical, Download, User, KeyRound, LogOut, Settings, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import { usePWAInstall } from "../../../lib/usePWAInstall";
 
@@ -56,8 +56,9 @@ export const Topbar: React.FC<TopbarProps> = ({ title, right }) => {
 
                         <Link
                             to="/admin/profile"
-                            className="block px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 rounded-t-xl"
+                            className="flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800 rounded-t-xl"
                         >
+                            <User className="w-4 h-4 text-zinc-400" />
                             Profile / Me
                         </Link>
 
@@ -65,15 +66,39 @@ export const Topbar: React.FC<TopbarProps> = ({ title, right }) => {
 
                         <Link
                             to="/admin/change-password"
-                            className="block px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800"
+                            className="flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800"
                         >
+                            <KeyRound className="w-4 h-4 text-zinc-400" />
                             Change Password
                         </Link>
 
+                        <div className="h-px bg-zinc-800" />
+
+                        <Link
+                            to="/admin/settings"
+                            className="flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800"
+                        >
+                            <Settings className="w-4 h-4 text-zinc-400" />
+                            Settings
+                        </Link>
+
+                        <div className="h-px bg-zinc-800" />
+
+                        <Link
+                            to="/admin/email-templates"
+                            className="flex items-center gap-2.5 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800"
+                        >
+                            <Mail className="w-4 h-4 text-zinc-400" />
+                            Email Templates
+                        </Link>
+
+                        <div className="h-px bg-zinc-800" />
+
                         <Link
                             to="/admin/logout"
-                            className="block px-3 py-2 text-sm text-red-400 hover:bg-zinc-800 rounded-b-xl"
+                            className="flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:bg-zinc-800 rounded-b-xl"
                         >
+                            <LogOut className="w-4 h-4" />
                             Logout
                         </Link>
                     </div>
