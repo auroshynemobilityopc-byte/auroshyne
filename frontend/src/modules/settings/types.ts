@@ -15,6 +15,20 @@ export interface Setting {
     taxPercentage: number;
     videoLink: string;
     homeServices?: HomeService[];
+    emailSettings?: {
+        provider: 'disabled' | 'nodemailer' | 'resend';
+        fromEmail: string;
+        fromName: string;
+        nodemailer?: {
+            host: string;
+            port: number | '';
+            user: string;
+            pass: string;
+        };
+        resend?: {
+            apiKey: string;
+        };
+    };
     createdAt?: string;
     updatedAt?: string;
 }
@@ -34,4 +48,18 @@ export interface UpdateSettingPayload {
     taxPercentage?: number;
     videoLink?: string;
     homeServices?: { serviceId: string; image: string; description: string; }[];
+    emailSettings?: {
+        provider: 'disabled' | 'nodemailer' | 'resend';
+        fromEmail: string;
+        fromName: string;
+        nodemailer?: {
+            host: string;
+            port: number | '';
+            user: string;
+            pass: string;
+        };
+        resend?: {
+            apiKey: string;
+        };
+    };
 }

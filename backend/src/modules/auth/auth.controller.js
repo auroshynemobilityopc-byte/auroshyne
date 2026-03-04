@@ -4,6 +4,8 @@ const { loginDTO } = require('./login.dto');
 const { registerDTO } = require('./register.dto');
 const { AppError } = require('../../common/utils/appError');
 const { changePasswordDTO, refreshTokenDTO } = require('./auth.dto');
+const mailService = require('../mail/mail.service');
+const EmailTemplate = require('../emailTemplates/emailTemplate.model');
 
 exports.login = asyncHandler(async (req, res) => {
     const { error, value } = loginDTO.validate(req.body);
@@ -25,6 +27,20 @@ exports.register = asyncHandler(async (req, res) => {
     if (error) throw new AppError(error.details[0].message, 400);
 
     const data = await authService.register(value);
+
+    // After success, optionally send the New Register email
+    try {
+        const template = await EmailTemplate.findOne({ name: 'New Register' });
+        if (template) {
+            await mailService.sendParsedMail({
+                to: data.user.email,
+                templateId: template._id,
+                userId: data.user._id,
+            });
+        }
+    } catch (err) {
+        console.error('Failed to send registration email:', err);
+    }
 
     res.status(201).json({
         success: true,

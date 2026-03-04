@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Copy, MapPin } from "lucide-react";
+import { Copy, MapPin, Mail } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
@@ -33,6 +33,7 @@ import { AssignTechnicianSheet } from "../components/AssignTechnicianSheet";
 import { PaymentActions } from "../components/PaymentActions";
 import { StatusActions } from "../components/StatusActions";
 import { UpiTxnDrawer } from "../components/UpiTxnDrawer";
+import { SendEmailModal } from "../../emailTemplates/components/SendEmailModal";
 
 import { Button } from "../../../components/shared/Button";
 
@@ -47,6 +48,7 @@ export const BookingDetailsPage = () => {
     const [paymentOpen, setPaymentOpen] = useState(false);
     const [statusOpen, setStatusOpen] = useState(false);
     const [upiOpen, setUpiOpen] = useState(false);
+    const [emailOpen, setEmailOpen] = useState(false);
 
     const [paymentStatus, setPaymentStatus] =
         useState<PaymentStatus>("UNPAID");
@@ -282,6 +284,17 @@ export const BookingDetailsPage = () => {
                         💳 Payment
                     </Button>
                 </div>
+
+                <div className="w-full sm:w-auto">
+                    <Button
+                        variant="secondary"
+                        className="w-full sm:w-auto"
+                        onClick={() => setEmailOpen(true)}
+                    >
+                        <Mail className="w-4 h-4 mr-1" />
+                        Email Customer
+                    </Button>
+                </div>
             </div>
 
             {/* 🧾 INVOICE NAV */}
@@ -322,6 +335,14 @@ export const BookingDetailsPage = () => {
                     }}
                 >
                     Pay
+                </Button>
+
+                <Button
+                    className="flex-1"
+                    variant="secondary"
+                    onClick={() => setEmailOpen(true)}
+                >
+                    <Mail className="w-4 h-4" />
                 </Button>
             </div>
 
@@ -404,6 +425,13 @@ export const BookingDetailsPage = () => {
                         }
                     )
                 }
+            />
+
+            <SendEmailModal
+                open={emailOpen}
+                onClose={() => setEmailOpen(false)}
+                bookingId={booking._id}
+                userId={booking.userId}
             />
         </div>
     );

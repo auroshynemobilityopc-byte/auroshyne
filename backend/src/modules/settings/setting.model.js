@@ -17,6 +17,20 @@ const settingSchema = new mongoose.Schema(
                 description: { type: String, default: '' }
             }
         ],
+        emailSettings: {
+            provider: { type: String, enum: ['nodemailer', 'resend', 'disabled'], default: 'disabled' },
+            fromEmail: { type: String, default: '' },
+            fromName: { type: String, default: '' },
+            nodemailer: {
+                host: { type: String, default: '' },
+                port: { type: Number, default: 587 },
+                user: { type: String, default: '' },
+                pass: { type: String, default: '' }
+            },
+            resend: {
+                apiKey: { type: String, default: '' }
+            }
+        }
     },
     { timestamps: true }
 );

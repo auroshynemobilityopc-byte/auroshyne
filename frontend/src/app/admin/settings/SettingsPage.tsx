@@ -34,6 +34,20 @@ export const SettingsPage: React.FC = () => {
             { serviceId: "", image: "", description: "" },
             { serviceId: "", image: "", description: "" },
         ],
+        emailSettings: {
+            provider: "disabled",
+            fromEmail: "",
+            fromName: "",
+            nodemailer: {
+                host: "",
+                port: 587,
+                user: "",
+                pass: "",
+            },
+            resend: {
+                apiKey: "",
+            },
+        },
     });
 
     useEffect(() => {
@@ -56,6 +70,20 @@ export const SettingsPage: React.FC = () => {
                 taxPercentage: settingsData.data.taxPercentage || 0,
                 videoLink: settingsData.data.videoLink || "",
                 homeServices: paddedHs,
+                emailSettings: {
+                    provider: settingsData.data.emailSettings?.provider || "disabled",
+                    fromEmail: settingsData.data.emailSettings?.fromEmail || "",
+                    fromName: settingsData.data.emailSettings?.fromName || "",
+                    nodemailer: {
+                        host: settingsData.data.emailSettings?.nodemailer?.host || "",
+                        port: settingsData.data.emailSettings?.nodemailer?.port || 587,
+                        user: settingsData.data.emailSettings?.nodemailer?.user || "",
+                        pass: "",
+                    },
+                    resend: {
+                        apiKey: "",
+                    },
+                },
             });
         }
     }, [settingsData]);
@@ -87,13 +115,61 @@ export const SettingsPage: React.FC = () => {
         });
     };
 
+    const handleEmailSettingChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            emailSettings: {
+                ...prev.emailSettings!,
+                [name]: value,
+            },
+        }));
+    };
+
+    const handleNodemailerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            emailSettings: {
+                ...prev.emailSettings!,
+                nodemailer: {
+                    ...prev.emailSettings!.nodemailer!,
+                    [name]: name === "port" ? (value === "" ? "" : Number(value)) : value,
+                },
+            },
+        }));
+    };
+
+    const handleResendChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            emailSettings: {
+                ...prev.emailSettings!,
+                resend: {
+                    ...prev.emailSettings!.resend!,
+                    [name]: value,
+                },
+            },
+        }));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const payload = {
+            const payload: any = {
                 ...formData,
                 homeServices: formData.homeServices?.filter(hs => hs.serviceId && hs.serviceId !== "")
             };
+
+            // Do not send empty passwords (don't overwrite existing db credentials)
+            if (payload.emailSettings?.nodemailer?.pass === "") {
+                delete payload.emailSettings.nodemailer.pass;
+            }
+            if (payload.emailSettings?.resend?.apiKey === "") {
+                delete payload.emailSettings.resend.apiKey;
+            }
+
             await updateSettings.mutateAsync(payload);
             toast.success("Settings updated successfully");
         } catch (error: any) {
@@ -249,6 +325,114 @@ export const SettingsPage: React.FC = () => {
                         </div>
                     ))}
                 </div>
+            </Card>
+            <Card className="p-6">
+                <h2 className="text-lg font-semibold text-white mb-4">Email Delivery Settings</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <FormField label="Email Provider">
+                        <select
+                            name="provider"
+                            value={formData.emailSettings?.provider || "disabled"}
+                            onChange={handleEmailSettingChange}
+                            className="w-full bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-brand-blue transition-colors"
+                        >
+                            <option value="disabled">Disabled</option>
+                            <option value="nodemailer">Nodemailer (SMTP)</option>
+                            <option value="resend">Resend</option>
+                        </select>
+                    </FormField>
+                </div>
+
+                {formData.emailSettings?.provider !== "disabled" && (
+                    <>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                            <FormField label="From Name">
+                                <Input
+                                    type="text"
+                                    name="fromName"
+                                    value={formData.emailSettings?.fromName || ""}
+                                    onChange={handleEmailSettingChange}
+                                    placeholder="Company Name"
+                                    required
+                                />
+                            </FormField>
+                            <FormField label="From Email">
+                                <Input
+                                    type="email"
+                                    name="fromEmail"
+                                    value={formData.emailSettings?.fromEmail || ""}
+                                    onChange={handleEmailSettingChange}
+                                    placeholder="noreply@company.com"
+                                    required
+                                />
+                            </FormField>
+                        </div>
+
+                        {formData.emailSettings?.provider === "nodemailer" && (
+                            <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-4">
+                                <h3 className="text-brand-blue font-bold">SMTP Configuration</h3>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <FormField label="SMTP Host">
+                                        <Input
+                                            type="text"
+                                            name="host"
+                                            value={formData.emailSettings?.nodemailer?.host || ""}
+                                            onChange={handleNodemailerChange}
+                                            placeholder="smtp.gmail.com"
+                                            required={formData.emailSettings?.provider === "nodemailer"}
+                                        />
+                                    </FormField>
+                                    <FormField label="SMTP Port">
+                                        <Input
+                                            type="number"
+                                            name="port"
+                                            value={formData.emailSettings?.nodemailer?.port || ""}
+                                            onChange={handleNodemailerChange}
+                                            placeholder="587"
+                                            required={formData.emailSettings?.provider === "nodemailer"}
+                                        />
+                                    </FormField>
+                                    <FormField label="SMTP Username / Email">
+                                        <Input
+                                            type="text"
+                                            name="user"
+                                            value={formData.emailSettings?.nodemailer?.user || ""}
+                                            onChange={handleNodemailerChange}
+                                            placeholder="user@example.com"
+                                            required={formData.emailSettings?.provider === "nodemailer"}
+                                        />
+                                    </FormField>
+                                    <FormField label="SMTP Password">
+                                        <Input
+                                            type="password"
+                                            name="pass"
+                                            value={formData.emailSettings?.nodemailer?.pass || ""}
+                                            onChange={handleNodemailerChange}
+                                            placeholder="Leave blank to keep existing password"
+                                        />
+                                    </FormField>
+                                </div>
+                            </div>
+                        )}
+
+                        {formData.emailSettings?.provider === "resend" && (
+                            <div className="bg-white/5 border border-white/10 rounded-xl p-4 space-y-4">
+                                <h3 className="text-brand-blue font-bold">Resend Configuration</h3>
+                                <div className="grid grid-cols-1">
+                                    <FormField label="Resend API Key">
+                                        <Input
+                                            type="password"
+                                            name="apiKey"
+                                            value={formData.emailSettings?.resend?.apiKey || ""}
+                                            onChange={handleResendChange}
+                                            placeholder="Leave blank to keep existing API Key"
+                                        />
+                                    </FormField>
+                                </div>
+                            </div>
+                        )}
+                    </>
+                )}
             </Card>
         </form>
     );

@@ -46,7 +46,9 @@ export interface BookingListResponse {
 }
 
 export interface BookingDetails {
+    _id: string;
     bookingId: string;
+    userId?: string;
     customer: {
         name: string;
         mobile: string;

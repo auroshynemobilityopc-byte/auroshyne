@@ -7,6 +7,7 @@ interface Props {
     user: User;
     onEdit: () => void;
     onToggle: () => void;
+    onSendEmail: () => void;
     disableToggle?: boolean;
 }
 
@@ -14,6 +15,7 @@ export const UserCard: React.FC<Props> = ({
     user,
     onEdit,
     onToggle,
+    onSendEmail,
     disableToggle,
 }) => {
     return (
@@ -62,6 +64,13 @@ export const UserCard: React.FC<Props> = ({
                 >
                     <Pencil className="w-4 h-4" />
                     Edit
+                </button>
+
+                <button
+                    onClick={onSendEmail}
+                    className="h-10 px-3 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 text-sm font-medium flex items-center justify-center gap-1.5 transition-all duration-150"
+                >
+                    <Mail className="w-4 h-4" />
                 </button>
 
                 {!disableToggle && (

@@ -1,10 +1,11 @@
 import type { User } from "../types";
-import { Pencil, Power } from "lucide-react";
+import { Pencil, Power, Mail } from "lucide-react";
 
 interface Props {
     data: User[];
     onEdit: (u: User) => void;
     onToggle: (u: User) => void;
+    onSendEmail: (u: User) => void;
     currentUserId?: string;
 }
 
@@ -12,6 +13,7 @@ export const UserTable: React.FC<Props> = ({
     data,
     onEdit,
     onToggle,
+    onSendEmail,
     currentUserId,
 }) => {
     return (
@@ -77,6 +79,14 @@ export const UserTable: React.FC<Props> = ({
                                             className="p-2 rounded-lg hover:bg-zinc-800 transition-all duration-150"
                                         >
                                             <Pencil className="w-4 h-4 text-zinc-300" />
+                                        </button>
+
+                                        <button
+                                            onClick={() => onSendEmail(u)}
+                                            className="p-2 rounded-lg hover:bg-zinc-800 transition-all duration-150"
+                                            title="Send Email"
+                                        >
+                                            <Mail className="w-4 h-4 text-brand-blue" />
                                         </button>
 
                                         {u._id !== currentUserId && (

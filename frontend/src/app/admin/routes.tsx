@@ -14,6 +14,7 @@ import { ProfilePage } from "../../modules/users/pages/ProfilePage";
 import { BookingDetailsPage } from "../../modules/bookings/pages/BookingDetailsPage";
 import { InvoicePage } from "../../modules/invoices/pages/InvoicePage";
 import { SettingsPage } from "./settings/SettingsPage";
+import { EmailTemplatesPage } from "./emailTemplates/EmailTemplatesPage";
 
 export const adminRoutes = createBrowserRouter([
     {
@@ -41,6 +42,7 @@ export const adminRoutes = createBrowserRouter([
                     { path: "users", element: <UsersPage /> },
                     { path: "profile", element: <ProfilePage /> },
                     { path: "settings", element: <SettingsPage /> },
+                    { path: "email-templates", element: <EmailTemplatesPage /> },
                     { path: "bookings/:id", element: <BookingDetailsPage /> },
                     { path: "invoices/:bookingId", element: <InvoicePage /> }
                 ],

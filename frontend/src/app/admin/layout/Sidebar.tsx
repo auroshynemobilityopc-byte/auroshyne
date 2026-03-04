@@ -11,6 +11,7 @@ import {
     PlusSquare,
     UserCircle,
     LogOut,
+    Mail,
     Settings as SettingsIcon
 } from "lucide-react";
 
@@ -27,6 +28,7 @@ const menu: MenuItem[] = [
     { label: "Technicians", path: "/admin/technicians", icon: <Wrench className="w-4 h-4" /> },
     { label: "Services", path: "/admin/services", icon: <Layers className="w-4 h-4" /> },
     { label: "Add-ons", path: "/admin/addons", icon: <PlusSquare className="w-4 h-4" /> },
+    { label: "Email Templates", path: "/admin/email-templates", icon: <Mail className="w-4 h-4" /> },
     { label: "Settings", path: "/admin/settings", icon: <SettingsIcon className="w-4 h-4" /> },
 ];
 
@@ -34,7 +36,7 @@ export const Sidebar: React.FC = () => {
     const logout = useLogout();
 
     return (
-        <aside className="hidden lg:flex lg:flex-col w-64 border-r border-zinc-800 bg-zinc-950 p-4">
+        <aside className="hidden lg:flex lg:flex-col w-64 h-screen sticky top-0 border-r border-zinc-800 bg-zinc-950 p-4">
 
             {/* LOGO / TITLE */}
             <div className="flex items-center gap-2 mb-6 px-1">
@@ -45,7 +47,7 @@ export const Sidebar: React.FC = () => {
             </div>
 
             {/* NAV SCROLL AREA */}
-            <nav className="flex flex-col gap-1 overflow-y-auto pr-1">
+            <nav className="flex-1 flex flex-col gap-1 overflow-y-auto pr-1">
                 {menu.map((item) => (
                     <NavLink
                         key={item.path}

@@ -15,6 +15,8 @@ const technicianJobsRoutes = require('./src/modules/technicians/jobs/technicianJ
 const notificationRoutes = require('./src/modules/notifications/notification.routes');
 const discountRoutes = require('./src/modules/discounts/discount.routes');
 const settingRoutes = require('./src/modules/settings/setting.routes');
+const mailRoutes = require('./src/modules/mail/mail.routes');
+const emailTemplateRoutes = require('./src/modules/emailTemplates/emailTemplate.routes');
 const errorHandler = require('./src/common/middleware/error.middleware');
 const { globalLimiter } = require('./src/common/middleware/rateLimit.middleware');
 const cors = require('./src/config/cors');
@@ -81,6 +83,8 @@ app.use('/technician-jobs', technicianJobsRoutes);
 app.use('/notifications', notificationRoutes);
 app.use('/discounts', discountRoutes);
 app.use('/settings', settingRoutes);
+app.use('/mail', mailRoutes);
+app.use('/email-templates', emailTemplateRoutes);
 app.use(errorHandler);
 
 module.exports = app;

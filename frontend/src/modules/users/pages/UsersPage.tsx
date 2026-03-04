@@ -6,6 +6,7 @@ import { UserTable } from "../components/UserTable";
 import { UserFormDrawer } from "../components/UserFormDrawer";
 import { Button } from "../../../components/shared/Button";
 import { Tabs } from "../../../components/shared/Tabs";
+import { SendEmailModal } from "../../emailTemplates/components/SendEmailModal";
 
 // Discounts imports
 import { useDiscounts, useCreateDiscount, useUpdateDiscount } from "../../discounts/hooks";
@@ -27,6 +28,7 @@ export const UsersPage = () => {
 
     const [userOpen, setUserOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<any>(null);
+    const [emailUser, setEmailUser] = useState<any>(null);
 
     const handleCreateUser = (form: any) => {
         userCreateMutation.mutate(form, {
@@ -135,6 +137,7 @@ export const UsersPage = () => {
                                 user={u}
                                 onEdit={() => { setSelectedUser(u); setUserOpen(true); }}
                                 onToggle={() => handleToggleUser(u)}
+                                onSendEmail={() => setEmailUser(u)}
                                 disableToggle={u._id === me?._id}
                             />
                         ))}
@@ -145,6 +148,7 @@ export const UsersPage = () => {
                         data={users}
                         onEdit={(u) => { setSelectedUser(u); setUserOpen(true); }}
                         onToggle={handleToggleUser}
+                        onSendEmail={(u) => setEmailUser(u)}
                         currentUserId={me?._id}
                     />
 
@@ -194,6 +198,13 @@ export const UsersPage = () => {
                     />
                 </div>
             )}
+            {/* SEND EMAIL MODAL */}
+            <SendEmailModal
+                open={!!emailUser}
+                onClose={() => setEmailUser(null)}
+                userId={emailUser?._id}
+                defaultToEmail={emailUser?.email}
+            />
         </div>
     );
 };
