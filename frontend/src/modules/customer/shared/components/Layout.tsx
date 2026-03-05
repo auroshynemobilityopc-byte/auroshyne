@@ -25,8 +25,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <img src="/icons/pwa-192.png" alt="Auro-Shyne Logo" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="font-bold text-xl leading-tight tracking-tight">AURO-SHYNE</h1>
-            <p className="text-[10px] text-brand-blue font-bold tracking-[0.2em] uppercase">Mobility</p>
+            <h1 className="font-bold text-xl leading-tight tracking-tight flex items-center gap-1.5">
+              AURO-SHYNE <span className="text-brand-blue">MOBILITY</span>
+            </h1>
           </div>
         </div>
 
@@ -88,8 +89,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <img src="/icons/pwa-192.png" alt="Auro-Shyne Logo" className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="font-bold text-lg leading-tight">AURO-SHYNE</h1>
-            <p className="text-[10px] text-brand-blue font-medium tracking-wider uppercase">Mobility</p>
+            <h1 className="font-bold text-lg leading-tight flex items-center gap-1.5">
+              AURO-SHYNE <span className="text-brand-blue">MOBILITY</span>
+            </h1>
           </div>
         </div>
         {isAuthenticated ? (
@@ -162,7 +164,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <div className="w-10 h-10 flex items-center justify-center">
                 <img src="/icons/pwa-192.png" alt="Auro-Shyne Logo" className="w-full h-full object-contain" />
               </div>
-              <span className="font-bold text-lg">AURO-SHYNE</span>
+              <span className="font-bold text-lg flex items-center gap-1.5">
+                AURO-SHYNE <span className="text-brand-blue">MOBILITY</span>
+              </span>
             </div>
             <p className="text-text-grey text-sm leading-relaxed">
               Premium doorstep vehicle cleaning services. We bring the shine to your drive with professional care and eco-friendly products.

@@ -9,6 +9,9 @@ exports.updateSettingDTO = Joi.object({
     bookingDays: Joi.number().min(1),
     taxPercentage: Joi.number().min(0),
     videoLink: Joi.string().allow(''),
+    isBookingClosed: Joi.boolean(),
+    bookingClosedMessage: Joi.string().allow(''),
+    galleryImages: Joi.array().items(Joi.string().allow('')),
     homeServices: Joi.array().items(
         Joi.object({
             serviceId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).required(),

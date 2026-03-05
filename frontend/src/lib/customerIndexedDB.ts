@@ -1,13 +1,13 @@
 /**
  * Customer App — Isolated IndexedDB
- * Completely separate from the admin IndexedDB ("carwash-offline-db").
+ * Completely separate from the admin IndexedDB ("auroshyne-offline-db").
  * Stores: bookings history, profile, saved data (addresses + vehicles).
  */
 
 import { openDB } from 'idb';
 import type { DBSchema, IDBPDatabase } from 'idb';
 
-const DB_NAME = 'carwash-customer-db';
+const DB_NAME = 'auroshyne-customer-db';
 const DB_VERSION = 1;
 
 interface CustomerOfflineDB extends DBSchema {

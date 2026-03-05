@@ -1,7 +1,7 @@
 import { openDB } from 'idb';
 import type { DBSchema, IDBPDatabase } from 'idb';
 
-const DB_NAME = "carwash-offline-db";
+const DB_NAME = "auroshyne-offline-db";
 const DB_VERSION = 3;
 
 interface OfflineDB extends DBSchema {

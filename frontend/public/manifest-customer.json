@@ -1,13 +1,13 @@
 {
-    "name": "Car Wash",
-    "short_name": "CarWash",
+    "name": "AURO-SHYNE Mobility",
+    "short_name": "AURO-SHYNE Mobility",
     "theme_color": "#18181b",
     "background_color": "#18181b",
     "display": "standalone",
     "orientation": "portrait-primary",
     "scope": "/",
     "start_url": "/",
-    "description": "Professional car wash booking and management",
+    "description": "Professional AURO-SHYNE Mobility booking and management",
     "icons": [
         {
             "src": "/icons/pwa-192.png",

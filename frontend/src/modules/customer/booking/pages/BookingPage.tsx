@@ -6,6 +6,7 @@ import { toast } from "react-hot-toast";
 import { format } from "date-fns";
 import { useCreateBooking, useServices, useAddons, useCreateCashfreeOrder, useVerifyCashfreePayment, useDeleteFailedBooking, useCheckSlotAvailability } from "../hooks";
 import { useCustomerAuth } from "../../../../app/customer/CustomerAuthContext";
+import { useSettings } from "../../../settings/hooks";
 // @ts-ignore
 import { load } from "@cashfreepayments/cashfree-js";
 
@@ -29,8 +30,11 @@ export default function BookingPage() {
     const { mutateAsync: deleteFailedBookingAsync } = useDeleteFailedBooking();
     const { data: servicesResult, isLoading: loadingServices } = useServices();
     const { data: addonsResult, isLoading: loadingAddons } = useAddons();
+    const { data: settingsResult, isLoading: loadingSettings } = useSettings();
 
     const isProcessing = isPending || isOrderPending || isVerifyPending;
+
+    const settings = settingsResult?.data;
 
     // ─── Slot Availability State ──────────────────────────────────────
     // 'idle' = not yet checked, 'available' = slot free, 'unavailable' = slot full
@@ -178,6 +182,43 @@ export default function BookingPage() {
             }
         );
     };
+
+    if (loadingSettings) {
+        return (
+            <div className="flex items-center justify-center p-12 min-h-[50vh]">
+                <div className="animate-pulse flex flex-col items-center gap-4">
+                    <div className="w-12 h-12 border-4 border-brand-blue border-t-transparent rounded-full animate-spin" />
+                    <p className="text-zinc-400">Loading booking page...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (settings?.isBookingClosed) {
+        return (
+            <div className="flex flex-col items-center justify-center p-6 md:p-12 min-h-[60vh] text-center">
+                <div className="bg-charcoal-800/50 border border-white/10 rounded-3xl p-8 max-w-lg w-full flex flex-col items-center gap-6">
+                    <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center text-red-500">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-10 h-10">
+                            <rect width="18" height="18" x="3" y="3" rx="2" ry="2" />
+                            <line x1="9" x2="15" y1="9" y2="15" />
+                            <line x1="15" x2="9" y1="9" y2="15" />
+                        </svg>
+                    </div>
+                    <h2 className="text-2xl font-bold text-white">Bookings Temporarily Closed</h2>
+                    <p className="text-zinc-400 text-lg">
+                        {settings.bookingClosedMessage || "Temporary bookings are closed and will be continued soon."}
+                    </p>
+                    <button
+                        onClick={() => navigate('/')}
+                        className="mt-4 bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-xl font-bold transition-all w-full"
+                    >
+                        Return to Home
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="p-6 pb-48 md:pb-12 md:pt-12">

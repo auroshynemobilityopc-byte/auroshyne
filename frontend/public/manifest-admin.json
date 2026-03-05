@@ -1,5 +1,5 @@
 {
-    "name": "Car Wash Admin",
+    "name": "AURO-SHYNE Mobility Admin",
     "short_name": "Admin",
     "theme_color": "#18181b",
     "background_color": "#18181b",
@@ -7,7 +7,7 @@
     "orientation": "portrait-primary",
     "scope": "/admin",
     "start_url": "/admin",
-    "description": "Car Wash Admin Dashboard",
+    "description": "AURO-SHYNE Mobility Admin Dashboard",
     "icons": [
         {
             "src": "/icons/pwa-192.png",

@@ -14,7 +14,7 @@ const coupons = [
         maxDiscount: 300,            // capped at ₹300 off
         usageLimit: 0,               // no global cap; per-customer cap enforced via oncePerCustomer + usageCondition
         isActive: true,
-        description: 'First booking offer – get 20% off (up to ₹300) on your very first car wash booking.',
+        description: 'First booking offer – get 20% off (up to ₹300) on your very first AURO-SHYNE Mobility booking.',
         usageCondition: 'firstBookingOnly', // only valid if customer has 0 prior bookings
         oncePerCustomer: true,
     },

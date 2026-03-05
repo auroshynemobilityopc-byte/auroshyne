@@ -14,6 +14,9 @@ export interface Setting {
     bookingDays: number;
     taxPercentage: number;
     videoLink: string;
+    isBookingClosed: boolean;
+    bookingClosedMessage: string;
+    galleryImages?: string[];
     homeServices?: HomeService[];
     emailSettings?: {
         provider: 'disabled' | 'nodemailer' | 'resend';
@@ -47,6 +50,9 @@ export interface UpdateSettingPayload {
     bookingDays?: number;
     taxPercentage?: number;
     videoLink?: string;
+    isBookingClosed?: boolean;
+    bookingClosedMessage?: string;
+    galleryImages?: string[];
     homeServices?: { serviceId: string; image: string; description: string; }[];
     emailSettings?: {
         provider: 'disabled' | 'nodemailer' | 'resend';

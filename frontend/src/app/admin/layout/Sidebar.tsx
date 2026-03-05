@@ -40,10 +40,12 @@ export const Sidebar: React.FC = () => {
 
             {/* LOGO / TITLE */}
             <div className="flex items-center gap-2 mb-6 px-1">
-                <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-sm font-semibold shadow-sm shadow-black/20">
+                <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-sm font-semibold shadow-sm shadow-black/20 shrink-0">
                     A
                 </div>
-                <h2 className="text-lg font-semibold tracking-tight">Admin</h2>
+                <h2 className="text-lg font-semibold tracking-tight flex items-center gap-1.5 whitespace-nowrap">
+                    AURO-SHYNE <span className="text-indigo-400">MOBILITY</span>
+                </h2>
             </div>
 
             {/* NAV SCROLL AREA */}

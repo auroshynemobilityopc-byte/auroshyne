@@ -10,6 +10,9 @@ const settingSchema = new mongoose.Schema(
         bookingDays: { type: Number, default: 7 },
         taxPercentage: { type: Number, default: 0 },
         videoLink: { type: String, default: '' },
+        isBookingClosed: { type: Boolean, default: false },
+        bookingClosedMessage: { type: String, default: 'Temporary bookings are closed and will be continued soon.' },
+        galleryImages: [{ type: String }],
         homeServices: [
             {
                 serviceId: { type: mongoose.Schema.Types.ObjectId, ref: 'Service' },

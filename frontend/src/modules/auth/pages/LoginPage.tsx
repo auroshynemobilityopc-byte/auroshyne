@@ -49,7 +49,7 @@ export const LoginPage = () => {
 
                 <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col gap-4">
                     <FormField label="Email">
-                        <Input {...register("email")} placeholder="admin@carwash.com"
+                        <Input {...register("email")} placeholder="admin@auroshyne.com"
                             className="text-white"
                         />
                     </FormField>

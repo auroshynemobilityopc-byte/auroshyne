@@ -12,7 +12,7 @@ const seedSuperAdmin = async () => {
         await mongoose.connect(MONGO_URI);
         console.log('MongoDB connected for seeding');
 
-        const email = 'admin@carwash.com';
+        const email = 'admin@auroshyne.com';
 
         const existingAdmin = await User.findOne({ email });
 

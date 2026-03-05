@@ -4,12 +4,14 @@ import { ArrowRight, Star, Shield, Clock, Sparkles, CheckCircle2, Play } from "l
 import { useServices } from "../../booking/hooks";
 import { useSettings } from "../../../settings/hooks";
 import p1 from "../../../../assets/p1.avif";
+import ImageGallery from "../components/ImageGallery";
 
 export default function HomePage() {
     const { data: servicesResult } = useServices();
     const { data: settingsData } = useSettings();
     const ALL_SERVICES = servicesResult?.data || [];
     const videoLink = settingsData?.data?.videoLink;
+    const galleryImages = settingsData?.data?.galleryImages || [];
 
     // Deduplicate by name and find the starting price
     const uniqueServicesMap = new Map();
@@ -133,6 +135,9 @@ export default function HomePage() {
                     ))}
                 </div>
             </section>
+
+            {/* ================= IMAGE GALLERY ================= */}
+            {galleryImages.length > 0 && <ImageGallery images={galleryImages} />}
 
             {/* ================= SERVICES PREVIEW ================= */}
             <section className="p-6 pt-2 md:py-20 bg-charcoal-800/30">

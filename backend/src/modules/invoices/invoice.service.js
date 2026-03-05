@@ -76,7 +76,7 @@ exports.generateInvoice = async (bookingId) => {
         doc.pipe(stream);
     });
 
-    doc.fontSize(20).text('Car Wash Invoice', { align: 'center' });
+    doc.fontSize(20).text('AURO-SHYNE Mobility Invoice', { align: 'center' });
     doc.moveDown();
 
     doc.fontSize(12).text(`Invoice No: ${invoiceData.invoiceNumber}`);

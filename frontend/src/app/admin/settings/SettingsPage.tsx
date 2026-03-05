@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { toast } from "react-hot-toast";
-import { Save, Settings2 } from "lucide-react";
+import { Save, Settings2, ImagePlus, Loader2 } from "lucide-react";
 
 import { useSettings, useUpdateSettings } from "../../../modules/settings/hooks";
 import { useServices } from "../../../modules/services/hooks";
+import { uploadGalleryImageApi } from "../../../modules/settings/api";
 import type { UpdateSettingPayload } from "../../../modules/settings/types";
 
 import { Card } from "../../../components/shared/Card";
@@ -20,6 +21,9 @@ export const SettingsPage: React.FC = () => {
     const { data: servicesRes } = useServices();
     const servicesList = servicesRes?.data || [];
 
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isUploading, setIsUploading] = useState(false);
+
     const [formData, setFormData] = useState<UpdateSettingPayload>({
         slotsCount: {
             morning: 0,
@@ -29,6 +33,9 @@ export const SettingsPage: React.FC = () => {
         bookingDays: 7,
         taxPercentage: 0,
         videoLink: "",
+        isBookingClosed: false,
+        bookingClosedMessage: "Temporary bookings are closed and will be continued soon.",
+        galleryImages: [],
         homeServices: [
             { serviceId: "", image: "", description: "" },
             { serviceId: "", image: "", description: "" },
@@ -69,6 +76,9 @@ export const SettingsPage: React.FC = () => {
                 bookingDays: settingsData.data.bookingDays || 7,
                 taxPercentage: settingsData.data.taxPercentage || 0,
                 videoLink: settingsData.data.videoLink || "",
+                isBookingClosed: settingsData.data.isBookingClosed || false,
+                bookingClosedMessage: settingsData.data.bookingClosedMessage || "Temporary bookings are closed and will be continued soon.",
+                galleryImages: settingsData.data.galleryImages || [],
                 homeServices: paddedHs,
                 emailSettings: {
                     provider: settingsData.data.emailSettings?.provider || "disabled",
@@ -88,12 +98,53 @@ export const SettingsPage: React.FC = () => {
         }
     }, [settingsData]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        const { name, value, type } = e.target;
+        if (type === 'checkbox') {
+            const { checked } = e.target as HTMLInputElement;
+            setFormData((prev) => ({
+                ...prev,
+                [name]: checked,
+            }));
+        } else {
+            setFormData((prev) => ({
+                ...prev,
+                [name]: name === "videoLink" || name === "bookingClosedMessage" ? value : Number(value),
+            }));
+        }
+    };
+
+    const handleGalleryChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setFormData((prev) => ({
             ...prev,
-            [name]: name === "videoLink" ? value : Number(value),
+            galleryImages: e.target.value.split('\n').filter(url => url.trim() !== "")
         }));
+    };
+
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setIsUploading(true);
+        toast.loading("Uploading image...", { id: "upload-toast" });
+
+        try {
+            const res = await uploadGalleryImageApi(file);
+            if (res.success && res.url) {
+                setFormData((prev) => ({
+                    ...prev,
+                    galleryImages: [...(prev.galleryImages || []), res.url]
+                }));
+                toast.success("Image uploaded successfully!", { id: "upload-toast" });
+            } else {
+                toast.error("Upload failed.", { id: "upload-toast" });
+            }
+        } catch (error: any) {
+            toast.error(error?.response?.data?.message || "Failed to upload image.", { id: "upload-toast" });
+        } finally {
+            setIsUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
     };
 
     const handleSlotChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -283,6 +334,76 @@ export const SettingsPage: React.FC = () => {
                     />
                 </FormField>
             </Card>
+
+            <Card className="p-6 border-red-500/30">
+                <h2 className="text-lg font-semibold text-red-400 mb-4">Emergency Controls</h2>
+                <div className="flex flex-col gap-4">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            name="isBookingClosed"
+                            checked={formData.isBookingClosed}
+                            onChange={handleChange}
+                            className="w-5 h-5 rounded border-white/20 bg-zinc-900 text-brand-blue focus:ring-brand-blue"
+                        />
+                        <div>
+                            <span className="text-white font-medium block">Close New Bookings</span>
+                            <span className="text-xs text-zinc-400">If checked, customers won't be able to access the booking page.</span>
+                        </div>
+                    </label>
+
+                    {formData.isBookingClosed && (
+                        <FormField label="Closing Message / Prompt">
+                            <textarea
+                                name="bookingClosedMessage"
+                                value={formData.bookingClosedMessage}
+                                onChange={handleChange}
+                                placeholder="Message to display when customers try to book..."
+                                rows={3}
+                                className="w-full bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 resize-none focus:outline-none focus:border-brand-blue transition-colors"
+                            />
+                        </FormField>
+                    )}
+                </div>
+            </Card>
+
+            <Card className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 className="text-lg font-semibold text-white">Home Page Image Gallery</h2>
+                        <p className="text-sm text-zinc-400">Enter image URLs manually or upload files (one URL per line).</p>
+                    </div>
+                    <div>
+                        <input
+                            type="file"
+                            accept="image/*"
+                            ref={fileInputRef}
+                            className="hidden"
+                            onChange={handleFileUpload}
+                        />
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading}
+                        >
+                            {isUploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <ImagePlus className="w-4 h-4 mr-2" />}
+                            {isUploading ? "Uploading..." : "Upload Image"}
+                        </Button>
+                    </div>
+                </div>
+
+                <FormField label="Gallery Images">
+                    <textarea
+                        value={formData.galleryImages?.join('\n') || ''}
+                        onChange={handleGalleryChange}
+                        placeholder="https://example.com/img1.jpg&#10;https://example.com/img2.jpg"
+                        rows={5}
+                        className="w-full bg-zinc-900 border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder-zinc-500 resize-y focus:outline-none focus:border-brand-blue transition-colors leading-relaxed"
+                    />
+                </FormField>
+            </Card>
+
             <Card className="p-6">
                 <h2 className="text-lg font-semibold text-white mb-4">Featured Home Services</h2>
                 <p className="text-sm text-zinc-400 mb-6">Select 3 services to feature on the home screen along with custom descriptions and images.</p>
