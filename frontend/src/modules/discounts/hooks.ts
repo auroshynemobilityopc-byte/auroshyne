@@ -5,6 +5,7 @@ export const useDiscounts = (params?: any) => {
     return useQuery({
         queryKey: ["discounts", params],
         queryFn: () => getDiscountsApi(params),
+        placeholderData: (prev) => prev,
     });
 };
 

@@ -11,6 +11,7 @@ export const useUsers = (params?: any) =>
     useQuery({
         queryKey: ["users", params],
         queryFn: () => getUsersApi(params),
+        placeholderData: (prev) => prev,
     });
 
 export const useCreateUser = () => {

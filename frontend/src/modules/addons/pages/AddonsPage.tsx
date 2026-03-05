@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import {
     useAddons,
@@ -9,17 +9,26 @@ import { AddonCard } from "../components/AddonCard";
 import { AddonTable } from "../components/AddonTable";
 import { AddonFormDrawer } from "../components/AddonFormDrawer";
 import { Button } from "../../../components/shared/Button";
+import { Pagination } from "../../../components/shared/Pagination";
 import { Layers, Plus } from "lucide-react";
+
+const LIMIT = 10;
 
 export const AddonsPage = () => {
     const [showInactive, setShowInactive] = useState(false);
+    const [page, setPage] = useState(1);
+
+    // Reset to page 1 when filter changes
+    useEffect(() => { setPage(1); }, [showInactive]);
 
     const { data } = useAddons({
-        limit: 50,
+        limit: LIMIT,
+        page,
         isActive: showInactive ? undefined : true,
     });
 
     const addons = data?.data ?? [];
+    const pagination = data?.pagination;
 
     const createMutation = useCreateAddon();
     const updateMutation = useUpdateAddon();
@@ -128,6 +137,17 @@ export const AddonsPage = () => {
                 onEdit={handleEdit}
                 onToggle={handleToggle}
             />
+
+            {/* PAGINATION */}
+            {pagination && (
+                <Pagination
+                    page={pagination.page}
+                    pages={pagination.pages}
+                    total={pagination.total}
+                    limit={LIMIT}
+                    onPageChange={setPage}
+                />
+            )}
 
             {/* DRAWER */}
             <AddonFormDrawer

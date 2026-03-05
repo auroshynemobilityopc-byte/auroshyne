@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import {
     useTechnicians,
@@ -9,17 +9,26 @@ import { TechnicianCard } from "../components/TechnicianCard";
 import { TechnicianTable } from "../components/TechnicianTable";
 import { TechnicianFormDrawer } from "../components/TechnicianFormDrawer";
 import { Button } from "../../../components/shared/Button";
+import { Pagination } from "../../../components/shared/Pagination";
 import { Users, Plus } from "lucide-react";
+
+const LIMIT = 10;
 
 export const TechniciansPage = () => {
     const [showInactive, setShowInactive] = useState(false);
+    const [page, setPage] = useState(1);
+
+    // Reset to page 1 when filter changes
+    useEffect(() => { setPage(1); }, [showInactive]);
 
     const { data } = useTechnicians({
-        limit: 20,
+        limit: LIMIT,
+        page,
         isActive: showInactive ? undefined : true,
     });
 
     const techs = data?.data ?? [];
+    const pagination = data?.pagination;
 
     const createMutation = useCreateTechnician();
     const updateMutation = useUpdateTechnician();
@@ -127,6 +136,17 @@ export const TechniciansPage = () => {
                 onEdit={handleEdit}
                 onToggle={handleToggle}
             />
+
+            {/* PAGINATION */}
+            {pagination && (
+                <Pagination
+                    page={pagination.page}
+                    pages={pagination.pages}
+                    total={pagination.total}
+                    limit={LIMIT}
+                    onPageChange={setPage}
+                />
+            )}
 
             {/* DRAWER */}
             <TechnicianFormDrawer

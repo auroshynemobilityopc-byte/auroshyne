@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "react-hot-toast";
 import {
     useServices,
@@ -9,17 +9,26 @@ import { ServiceCard } from "../components/ServiceCard";
 import { ServiceTable } from "../components/ServiceTable";
 import { ServiceFormDrawer } from "../components/ServiceFormDrawer";
 import { Button } from "../../../components/shared/Button";
+import { Pagination } from "../../../components/shared/Pagination";
 import { Wrench, Plus } from "lucide-react";
+
+const LIMIT = 10;
 
 export const ServicesPage = () => {
     const [showInactive, setShowInactive] = useState(false);
+    const [page, setPage] = useState(1);
+
+    // Reset to page 1 when filter changes
+    useEffect(() => { setPage(1); }, [showInactive]);
 
     const { data } = useServices({
-        limit: 50,
+        limit: LIMIT,
+        page,
         isActive: showInactive ? undefined : true,
     });
 
     const services = data?.data ?? [];
+    const pagination = data?.pagination;
 
     const createMutation = useCreateService();
     const updateMutation = useUpdateService();
@@ -129,6 +138,17 @@ export const ServicesPage = () => {
                 onEdit={handleEdit}
                 onToggle={handleToggle}
             />
+
+            {/* PAGINATION */}
+            {pagination && (
+                <Pagination
+                    page={pagination.page}
+                    pages={pagination.pages}
+                    total={pagination.total}
+                    limit={LIMIT}
+                    onPageChange={setPage}
+                />
+            )}
 
             {/* DRAWER */}
             <ServiceFormDrawer

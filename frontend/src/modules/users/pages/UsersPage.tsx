@@ -6,6 +6,7 @@ import { UserTable } from "../components/UserTable";
 import { UserFormDrawer } from "../components/UserFormDrawer";
 import { Button } from "../../../components/shared/Button";
 import { Tabs } from "../../../components/shared/Tabs";
+import { Pagination } from "../../../components/shared/Pagination";
 import { SendEmailModal } from "../../emailTemplates/components/SendEmailModal";
 
 // Discounts imports
@@ -14,12 +15,16 @@ import { DiscountCard } from "../../discounts/components/DiscountCard";
 import { DiscountTable } from "../../discounts/components/DiscountTable";
 import { DiscountFormDrawer } from "../../discounts/components/DiscountFormDrawer";
 
+const LIMIT = 10;
+
 export const UsersPage = () => {
     const [activeTab, setActiveTab] = useState("CUSTOMERS");
 
     // ---------------- CUSTOMERS ----------------
-    const { data: usersData } = useUsers({ limit: 50 });
+    const [userPage, setUserPage] = useState(1);
+    const { data: usersData } = useUsers({ limit: LIMIT, page: userPage });
     const users = usersData?.data.filter((u) => u.role === "CUSTOMER") ?? [];
+    const userPagination = usersData?.pagination;
 
     const { data: me } = useMe();
 
@@ -70,8 +75,10 @@ export const UsersPage = () => {
 
 
     // ---------------- DISCOUNTS ----------------
-    const { data: discountsData } = useDiscounts({ limit: 50 });
+    const [discountPage, setDiscountPage] = useState(1);
+    const { data: discountsData } = useDiscounts({ limit: LIMIT, page: discountPage });
     const discounts = discountsData?.data ?? [];
+    const discountPagination = discountsData?.pagination;
 
     const discountCreateMutation = useCreateDiscount();
     const discountUpdateMutation = useUpdateDiscount();
@@ -152,6 +159,16 @@ export const UsersPage = () => {
                         currentUserId={me?._id}
                     />
 
+                    {userPagination && (
+                        <Pagination
+                            page={userPagination.page}
+                            pages={userPagination.pages}
+                            total={userPagination.total}
+                            limit={LIMIT}
+                            onPageChange={setUserPage}
+                        />
+                    )}
+
                     <UserFormDrawer
                         open={userOpen}
                         onClose={() => setUserOpen(false)}
@@ -188,6 +205,16 @@ export const UsersPage = () => {
                         onEdit={(d) => { setSelectedDiscount(d); setDiscountOpen(true); }}
                         onToggle={handleToggleDiscount}
                     />
+
+                    {discountPagination && (
+                        <Pagination
+                            page={discountPagination.page}
+                            pages={discountPagination.pages}
+                            total={discountPagination.total}
+                            limit={LIMIT}
+                            onPageChange={setDiscountPage}
+                        />
+                    )}
 
                     <DiscountFormDrawer
                         open={discountOpen}
