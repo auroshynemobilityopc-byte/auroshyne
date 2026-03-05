@@ -36,6 +36,7 @@ import { UpiTxnDrawer } from "../components/UpiTxnDrawer";
 import { SendEmailModal } from "../../emailTemplates/components/SendEmailModal";
 
 import { Button } from "../../../components/shared/Button";
+import { Badge } from "../../../components/shared/Badge";
 
 export const BookingDetailsPage = () => {
     const { id } = useParams();
@@ -73,9 +74,19 @@ export const BookingDetailsPage = () => {
             <div className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h1 className="text-xl font-semibold text-white">
-                            Booking #{booking.bookingId}
-                        </h1>
+                        <div className="flex flex-wrap items-center gap-2 mb-1">
+                            <h1 className="text-xl font-semibold text-white">
+                                Booking #{booking.bookingId}
+                            </h1>
+                            <Badge variant={
+                                booking.status === "COMPLETED" ? "success" :
+                                    booking.status === "CANCELLED" ? "danger" :
+                                        booking.status === "IN_PROGRESS" ? "info" :
+                                            "warning"
+                            }>
+                                {booking.status.replace("_", " ")}
+                            </Badge>
+                        </div>
                         <p className="text-sm text-zinc-400">
                             {new Date(booking.date).toDateString()} •{" "}
                             {booking.slot}
@@ -252,25 +263,29 @@ export const BookingDetailsPage = () => {
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:flex sm:flex-wrap">
-                <div className="w-full sm:w-auto">
-                    <Button
-                        variant="secondary"
-                        className="w-full sm:w-auto"
-                        onClick={() => setAssignOpen(true)}
-                    >
-                        👨‍🔧 Assign
-                    </Button>
-                </div>
+                {booking.status === "PENDING" && (
+                    <div className="w-full sm:w-auto">
+                        <Button
+                            variant="secondary"
+                            className="w-full sm:w-auto"
+                            onClick={() => setAssignOpen(true)}
+                        >
+                            👨‍🔧 Assign
+                        </Button>
+                    </div>
+                )}
 
-                <div className="w-full sm:w-auto">
-                    <Button
-                        variant="secondary"
-                        className="w-full sm:w-auto"
-                        onClick={() => setStatusOpen(true)}
-                    >
-                        🔄 Status
-                    </Button>
-                </div>
+                {booking.status !== "COMPLETED" && booking.status !== "CANCELLED" && (
+                    <div className="w-full sm:w-auto">
+                        <Button
+                            variant="secondary"
+                            className="w-full sm:w-auto"
+                            onClick={() => setStatusOpen(true)}
+                        >
+                            🔄 Status
+                        </Button>
+                    </div>
+                )}
 
                 <div className="w-full sm:w-auto">
                     <Button
@@ -311,21 +326,25 @@ export const BookingDetailsPage = () => {
 
             {/* 📱 STICKY MOBILE ACTION BAR */}
             <div className="fixed bottom-0 left-0 right-0 bg-zinc-950 border-t border-zinc-800 p-3 flex gap-3 md:hidden">
-                <Button
-                    className="flex-1"
-                    variant="secondary"
-                    onClick={() => setAssignOpen(true)}
-                >
-                    Assign
-                </Button>
+                {booking.status === "PENDING" && (
+                    <Button
+                        className="flex-1"
+                        variant="secondary"
+                        onClick={() => setAssignOpen(true)}
+                    >
+                        Assign
+                    </Button>
+                )}
 
-                <Button
-                    className="flex-1"
-                    variant="secondary"
-                    onClick={() => setStatusOpen(true)}
-                >
-                    Status
-                </Button>
+                {booking.status !== "COMPLETED" && booking.status !== "CANCELLED" && (
+                    <Button
+                        className="flex-1"
+                        variant="secondary"
+                        onClick={() => setStatusOpen(true)}
+                    >
+                        Status
+                    </Button>
+                )}
 
                 <Button
                     className="flex-1"
@@ -414,6 +433,7 @@ export const BookingDetailsPage = () => {
             <StatusActions
                 open={statusOpen}
                 onClose={() => setStatusOpen(false)}
+                currentStatus={booking.status}
                 onSelect={(status) =>
                     statusMutation.mutate(
                         { bookingId: booking.bookingId, status },

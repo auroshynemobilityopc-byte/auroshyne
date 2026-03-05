@@ -386,6 +386,11 @@ export const BookingsPage = () => {
             <StatusActions
                 open={statusOpen}
                 onClose={() => setStatusOpen(false)}
+                currentStatus={
+                    [...desktopBookings, ...mobileBookings].find(
+                        (b) => b.bookingId === selectedBookingId
+                    )?.status
+                }
                 onSelect={handleStatusChange}
             />
 
