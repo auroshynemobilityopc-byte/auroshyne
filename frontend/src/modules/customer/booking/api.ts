@@ -54,3 +54,9 @@ export const deleteFailedBookingApi = async (bookingId: string) => {
     const response = await customerApi.delete(`/bookings/payment/failed-booking/${bookingId}`);
     return response.data;
 };
+
+export const checkSlotAvailabilityApi = async (date: string, slot: string, vehicleNumbers: string[] = []) => {
+    const params = vehicleNumbers.length > 0 ? `?vehicles=${vehicleNumbers.join(',')}` : '';
+    const response = await customerApi.get(`/bookings/slot-availability/${date}/${slot}${params}`);
+    return response.data;
+};

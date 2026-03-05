@@ -19,6 +19,13 @@ router.get(
     bookingController.getSlotBookings
 );
 
+router.get(
+    '/slot-availability/:date/:slot',
+    allowRoles(CUSTOMER, ADMIN),
+    bookingLimiter,
+    bookingController.checkSlotAvailability
+);
+
 router.post('/bulk', allowRoles(CUSTOMER, ADMIN), bookingLimiter, bookingController.bulkBooking);
 
 router.get('/', allowRoles(ADMIN), bookingController.getBookings);

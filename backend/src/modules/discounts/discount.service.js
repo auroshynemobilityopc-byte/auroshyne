@@ -1,4 +1,5 @@
 const Discount = require('./discount.model');
+const Booking = require('../bookings/booking.model');
 const { AppError } = require('../../common/utils/appError');
 
 exports.createDiscount = async (payload) => {
@@ -55,7 +56,7 @@ exports.deleteDiscount = async (id) => {
     return true;
 };
 
-exports.validateDiscountCode = async (code, orderValue) => {
+exports.validateDiscountCode = async (code, orderValue, userId) => {
     const discount = await Discount.findOne({ code, isActive: true });
 
     if (!discount) throw new AppError('Invalid or inactive discount code', 400);
@@ -75,6 +76,27 @@ exports.validateDiscountCode = async (code, orderValue) => {
 
     if (discount.minOrderValue > 0 && orderValue < discount.minOrderValue) {
         throw new AppError(`Minimum order value of Rs.${discount.minOrderValue} required for this discount`, 400);
+    }
+
+    // --- Per-customer once-per-use check ---
+    if (userId && discount.oncePerCustomer) {
+        const alreadyUsed = discount.usedBy.some(
+            (id) => id.toString() === userId.toString()
+        );
+        if (alreadyUsed) {
+            throw new AppError('You have already used this discount code', 400);
+        }
+    }
+
+    // --- Special usage conditions ---
+    if (userId && discount.usageCondition === 'firstBookingOnly') {
+        const priorBookingCount = await Booking.countDocuments({
+            userId,
+            status: { $ne: 'CANCELLED' },
+        });
+        if (priorBookingCount > 0) {
+            throw new AppError('This coupon is valid only on your first booking', 400);
+        }
     }
 
     return discount;

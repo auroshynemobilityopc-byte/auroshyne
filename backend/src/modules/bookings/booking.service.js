@@ -123,7 +123,7 @@ exports.createBooking = async (payload, userId) => {
         let discount = calculateDiscount(totalAmount, vehicles.length);
 
         if (payload.discountCode) {
-            const discountObj = await discountService.validateDiscountCode(payload.discountCode, totalAmount);
+            const discountObj = await discountService.validateDiscountCode(payload.discountCode, totalAmount, userId);
             let codeDiscount = discountObj.type === 'percentage'
                 ? totalAmount * (discountObj.value / 100)
                 : discountObj.value;
@@ -136,7 +136,10 @@ exports.createBooking = async (payload, userId) => {
 
             await mongoose.model('Discount').updateOne(
                 { _id: discountObj._id },
-                { $inc: { usedCount: 1 } },
+                {
+                    $inc: { usedCount: 1 },
+                    $addToSet: { usedBy: userId }
+                },
                 { session }
             );
         }
@@ -205,7 +208,7 @@ exports.bulkBooking = async (payload, userId) => {
             let discount = calculateDiscount(totalAmount, vehicles.length);
 
             if (b.discountCode) {
-                const discountObj = await discountService.validateDiscountCode(b.discountCode, totalAmount);
+                const discountObj = await discountService.validateDiscountCode(b.discountCode, totalAmount, userId);
                 let codeDiscount = discountObj.type === 'percentage'
                     ? totalAmount * (discountObj.value / 100)
                     : discountObj.value;
@@ -218,7 +221,10 @@ exports.bulkBooking = async (payload, userId) => {
 
                 await mongoose.model('Discount').updateOne(
                     { _id: discountObj._id },
-                    { $inc: { usedCount: 1 } },
+                    {
+                        $inc: { usedCount: 1 },
+                        $addToSet: { usedBy: userId }
+                    },
                     { session }
                 );
             }
@@ -413,6 +419,58 @@ exports.getBookingById = async (id) => {
 
 exports.getSlotBookings = async (date, slot) => {
     return Booking.find({ date, slot }).lean();
+};
+
+/* ---------------- CHECK SLOT AVAILABILITY ---------------- */
+
+exports.checkSlotAvailability = async (date, slot, vehicleNumbers = []) => {
+    const existing = await Booking.countDocuments({
+        date,
+        slot,
+        status: { $ne: 'CANCELLED' },
+    });
+
+    let capacity = slotConfig[slot]?.capacity || 20;
+
+    const setting = await Setting.findOne().lean();
+    if (setting && setting.slotsCount) {
+        const slotKey = slot.toLowerCase();
+        if (typeof setting.slotsCount[slotKey] === 'number') {
+            capacity = setting.slotsCount[slotKey];
+        }
+    }
+
+    const slotFull = existing >= capacity;
+
+    // Also check if any of the customer's vehicles are already booked for this slot
+    let conflictingVehicle = null;
+    if (vehicleNumbers.length > 0) {
+        const conflict = await Booking.findOne({
+            date,
+            slot,
+            status: { $ne: 'CANCELLED' },
+            'vehicles.number': { $in: vehicleNumbers.map(n => n.toUpperCase()) },
+        }).lean();
+
+        if (conflict) {
+            // Find which vehicle number caused the conflict
+            const matched = conflict.vehicles.find(v =>
+                vehicleNumbers.map(n => n.toUpperCase()).includes(v.number.toUpperCase())
+            );
+            conflictingVehicle = matched?.number || vehicleNumbers[0];
+        }
+    }
+
+    const available = !slotFull && !conflictingVehicle;
+
+    return {
+        available,
+        slotFull,
+        conflictingVehicle,  // null or the vehicle number that's already booked
+        booked: existing,
+        capacity,
+        remaining: Math.max(0, capacity - existing),
+    };
 };
 
 /* ---------------- MY BOOKINGS ---------------- */

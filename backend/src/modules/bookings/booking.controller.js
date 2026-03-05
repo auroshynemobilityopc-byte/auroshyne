@@ -81,6 +81,20 @@ exports.getSlotBookings = asyncHandler(async (req, res) => {
     res.status(200).json({ success: true, data });
 });
 
+exports.checkSlotAvailability = asyncHandler(async (req, res) => {
+    const { date, slot } = req.params;
+    if (!date || !slot) throw new AppError('date and slot are required', 400);
+
+    // Accept optional comma-separated vehicle numbers: ?vehicles=GA01A1234,GA01B5678
+    const vehicleNumbers = req.query.vehicles
+        ? String(req.query.vehicles).split(',').map(v => v.trim()).filter(Boolean)
+        : [];
+
+    const data = await bookingService.checkSlotAvailability(date, slot.toUpperCase(), vehicleNumbers);
+
+    res.status(200).json({ success: true, data });
+});
+
 exports.getMyBookings = asyncHandler(async (req, res) => {
     const data = await bookingService.getMyBookings(req.user._id);
     res.status(200).json({ success: true, data });

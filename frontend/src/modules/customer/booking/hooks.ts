@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createBooking, getMyBookings, getServices, getAddons, cancelBooking, requestRefund, updateBookingByCustomer, createCashfreeOrderApi, verifyCashfreePaymentApi, deleteFailedBookingApi } from "./api";
+import { createBooking, getMyBookings, getServices, getAddons, cancelBooking, requestRefund, updateBookingByCustomer, createCashfreeOrderApi, verifyCashfreePaymentApi, deleteFailedBookingApi, checkSlotAvailabilityApi } from "./api";
 import toast from "react-hot-toast";
 import { saveCustomerData, getCustomerData } from "../../../lib/customerIndexedDB";
 
@@ -151,5 +151,12 @@ export const useDeleteFailedBooking = () => {
         onError: (error: any) => {
             console.error("Failed to cleanup failed booking:", error);
         }
+    });
+};
+
+export const useCheckSlotAvailability = () => {
+    return useMutation({
+        mutationFn: ({ date, slot, vehicleNumbers }: { date: string; slot: string; vehicleNumbers?: string[] }) =>
+            checkSlotAvailabilityApi(date, slot, vehicleNumbers),
     });
 };

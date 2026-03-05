@@ -4,7 +4,7 @@ import { ChevronRight, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
-import { useCreateBooking, useServices, useAddons, useCreateCashfreeOrder, useVerifyCashfreePayment, useDeleteFailedBooking } from "../hooks";
+import { useCreateBooking, useServices, useAddons, useCreateCashfreeOrder, useVerifyCashfreePayment, useDeleteFailedBooking, useCheckSlotAvailability } from "../hooks";
 import { useCustomerAuth } from "../../../../app/customer/CustomerAuthContext";
 // @ts-ignore
 import { load } from "@cashfreepayments/cashfree-js";
@@ -31,6 +31,12 @@ export default function BookingPage() {
     const { data: addonsResult, isLoading: loadingAddons } = useAddons();
 
     const isProcessing = isPending || isOrderPending || isVerifyPending;
+
+    // ─── Slot Availability State ──────────────────────────────────────
+    // 'idle' = not yet checked, 'available' = slot free, 'unavailable' = slot full
+    const [slotStatus, setSlotStatus] = useState<'idle' | 'available' | 'unavailable'>('idle');
+    const [slotConflictVehicle, setSlotConflictVehicle] = useState<string | null>(null);
+    const { mutate: checkSlot, isPending: isCheckingSlot } = useCheckSlotAvailability();
 
     const SERVICES = servicesResult?.data || [];
     const ADDONS = addonsResult?.data || [];
@@ -78,6 +84,11 @@ export default function BookingPage() {
 
     const updateBooking = (updates: Partial<BookingState>) => {
         setBooking((prev) => ({ ...prev, ...updates }));
+        // If the user changes date or slot, reset the availability check
+        if ('date' in updates || 'slotId' in updates) {
+            setSlotStatus('idle');
+            setSlotConflictVehicle(null);
+        }
     };
 
     const calculateTotal = () => {
@@ -115,7 +126,7 @@ export default function BookingPage() {
             case 2: return <VehicleDetailsStep {...stepProps} />;
             case 3: return <ServiceSelectionStep {...stepProps} />;
             case 4: return <AddonSelectionStep {...stepProps} />;
-            case 5: return <DateSlotStep {...stepProps} />;
+            case 5: return <DateSlotStep {...stepProps} slotStatus={slotStatus} slotConflictVehicle={slotConflictVehicle} />;
             case 6: return <AddressStep {...stepProps} />;
             case 7: return <ReviewStep {...stepProps} />;
             case 8: return <PaymentStep {...stepProps} />;
@@ -128,6 +139,7 @@ export default function BookingPage() {
             case 1: return booking.category && booking.type;
             case 2: return booking.vehicles.every(v => v.number.length > 4);
             case 3: return booking.vehicles.every(v => v.serviceId);
+            // Step 5: date+slot must be selected (availability is checked separately)
             case 5: return booking.date && booking.slotId;
             case 6:
                 // Don't disable the button completely for step 6 if just map location is missing 
@@ -136,6 +148,35 @@ export default function BookingPage() {
             case 8: return booking.paymentMode;
             default: return true;
         }
+    };
+
+    // Handle the Step-5 "Check Availability" button click
+    const handleCheckAvailability = () => {
+        if (!booking.date || !booking.slotId) return;
+        const dateStr = format(booking.date, 'yyyy-MM-dd');
+        const slotStr = booking.slotId.toUpperCase();
+        // Collect all vehicle numbers selected in step 2
+        const vehicleNumbers = booking.vehicles.map(v => v.number).filter(Boolean);
+
+        checkSlot(
+            { date: dateStr, slot: slotStr, vehicleNumbers },
+            {
+                onSuccess: (res: any) => {
+                    if (res?.data?.available) {
+                        setSlotStatus('available');
+                        setSlotConflictVehicle(null);
+                    } else {
+                        setSlotStatus('unavailable');
+                        setSlotConflictVehicle(res?.data?.conflictingVehicle || null);
+                    }
+                },
+                onError: () => {
+                    toast.error('Could not check slot availability. Please try again.');
+                    setSlotStatus('idle');
+                    setSlotConflictVehicle(null);
+                }
+            }
+        );
     };
 
     return (
@@ -214,6 +255,17 @@ export default function BookingPage() {
                         )}
                         <button
                             onClick={() => {
+                                // ── Step 5: Check Availability first, then Continue ──
+                                if (step === 5) {
+                                    if (slotStatus === 'available') {
+                                        // Already verified — move to next step
+                                        nextStep();
+                                    } else {
+                                        handleCheckAvailability();
+                                    }
+                                    return;
+                                }
+
                                 if (step === 6 && !booking.address.mapLocation) {
                                     toast.error("Please select a location on the map before continuing.");
                                     return;
@@ -302,11 +354,25 @@ export default function BookingPage() {
                                     nextStep();
                                 }
                             }}
-                            disabled={!canProceed() || isProcessing}
+                            disabled={
+                                !canProceed() ||
+                                isProcessing ||
+                                isCheckingSlot ||
+                                (step === 5 && slotStatus === 'unavailable')
+                            }
                             className="flex-1 md:flex-none md:w-64 bg-brand-blue hover:bg-brand-accent disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl p-4 md:px-8 md:py-3 flex items-center justify-center gap-2 transition-all shadow-lg shadow-brand-blue/20"
                         >
-                            {isProcessing ? 'Processing...' : (step === 8 ? 'Confirm Booking' : 'Continue')}
-                            {!isProcessing && step !== 8 && <ChevronRight className="w-5 h-5" />}
+                            {isCheckingSlot
+                                ? 'Checking...'
+                                : isProcessing
+                                    ? 'Processing...'
+                                    : step === 8
+                                        ? 'Confirm Booking'
+                                        : step === 5 && slotStatus !== 'available'
+                                            ? 'Check Availability'
+                                            : 'Continue'
+                            }
+                            {!isCheckingSlot && !isProcessing && step !== 8 && <ChevronRight className="w-5 h-5" />}
                         </button>
                     </div>
                 </div>

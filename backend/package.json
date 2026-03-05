@@ -7,7 +7,8 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "seed:admin": "node src/config/seeds/superAdmin.seed.js"
+    "seed:admin": "node src/config/seeds/superAdmin.seed.js",
+    "seed:coupons": "node src/config/seeds/coupons.seed.js"
   },
   "author": "AD",
   "license": "ISC",

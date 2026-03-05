@@ -10,7 +10,9 @@ exports.createDiscountDTO = Joi.object({
     endDate: Joi.date().iso().greater(Joi.ref('startDate')).optional(),
     usageLimit: Joi.number().integer().min(0).default(0),
     isActive: Joi.boolean().default(true),
-    description: Joi.string().trim().optional()
+    description: Joi.string().trim().optional(),
+    usageCondition: Joi.string().valid('none', 'firstBookingOnly').default('none'),
+    oncePerCustomer: Joi.boolean().default(true),
 });
 
 exports.updateDiscountDTO = Joi.object({
@@ -22,7 +24,9 @@ exports.updateDiscountDTO = Joi.object({
     endDate: Joi.date().iso().greater(Joi.ref('startDate')).optional(),
     usageLimit: Joi.number().integer().min(0).optional(),
     isActive: Joi.boolean().optional(),
-    description: Joi.string().trim().optional()
+    description: Joi.string().trim().optional(),
+    usageCondition: Joi.string().valid('none', 'firstBookingOnly').optional(),
+    oncePerCustomer: Joi.boolean().optional(),
 }).min(1);
 
 exports.paginationDTO = Joi.object({

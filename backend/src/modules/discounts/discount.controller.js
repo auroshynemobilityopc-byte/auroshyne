@@ -67,7 +67,7 @@ exports.validateDiscount = asyncHandler(async (req, res) => {
     if (!code) throw new AppError('Discount code is required', 400);
     if (orderValue === undefined || orderValue === null) throw new AppError('Order value is required', 400);
 
-    const data = await discountService.validateDiscountCode(code, Number(orderValue));
+    const data = await discountService.validateDiscountCode(code, Number(orderValue), req.user._id);
 
     res.status(200).json({
         success: true,
