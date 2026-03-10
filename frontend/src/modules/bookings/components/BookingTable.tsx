@@ -10,6 +10,9 @@ import {
     Play,
     Check,
     CreditCard,
+    CarFront,
+    Bike,
+    Layers
 } from "lucide-react";
 
 interface Props {
@@ -162,11 +165,27 @@ export const BookingTable: React.FC<Props> = ({
 
                                 {/* CUSTOMER */}
                                 <td className="p-3">
-                                    <div className="font-medium text-zinc-100">
-                                        {b.userId?.name || b.customer.name}
-                                    </div>
-                                    <div className="text-xs text-zinc-500">
-                                        {b.userId?.mobile || b.customer.mobile}
+                                    <div className="flex items-center gap-3">
+                                        <div
+                                            className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-zinc-800 border border-white/5"
+                                            title={b.isBulk ? "Bulk Booking" : b.vehicles?.[0]?.type === '2W' ? "Bike" : "Car"}
+                                        >
+                                            {b.isBulk ? (
+                                                <Layers className="w-4 h-4 text-indigo-400" />
+                                            ) : b.vehicles?.[0]?.type === '2W' ? (
+                                                <Bike className="w-4 h-4 text-emerald-400" />
+                                            ) : (
+                                                <CarFront className="w-4 h-4 text-amber-400" />
+                                            )}
+                                        </div>
+                                        <div>
+                                            <div className="font-medium text-zinc-100">
+                                                {b.userId?.name || b.customer.name}
+                                            </div>
+                                            <div className="text-xs text-zinc-500">
+                                                {b.userId?.mobile || b.customer.mobile}
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
 

@@ -114,6 +114,16 @@ export default function BookingPage() {
 
     const totalEstimate = calculateTotal();
 
+    const twoVehiclesDiscount = settings?.bulkDiscount?.twoVehicles ?? 5;
+    const threeOrMoreVehiclesDiscount = settings?.bulkDiscount?.threeOrMoreVehicles ?? 10;
+
+    let bulkDiscount = 0;
+    if (booking.vehicles.length === 2) {
+        bulkDiscount = totalEstimate * (twoVehiclesDiscount / 100);
+    } else if (booking.vehicles.length >= 3) {
+        bulkDiscount = totalEstimate * (threeOrMoreVehiclesDiscount / 100);
+    }
+
     const stepProps = {
         booking,
         updateBooking,
@@ -121,7 +131,9 @@ export default function BookingPage() {
         addons: ADDONS,
         loadingServices,
         loadingAddons,
-        totalEstimate
+        totalEstimate,
+        bulkDiscount,
+        step
     };
 
     const renderStep = () => {
@@ -314,6 +326,15 @@ export default function BookingPage() {
 
                                 if (step === 8) {
                                     if (!booking.date || !booking.slotId) return;
+
+                                    const taxPercentage = settings?.taxPercentage || 0;
+                                    const effectiveDiscount = Math.max(booking.discountValue || 0, bulkDiscount || 0);
+                                    const finalAmount = (totalEstimate - effectiveDiscount) * (1 + taxPercentage / 100);
+
+                                    if (finalAmount < 0) {
+                                        toast.error("Invalid booking amount. The final amount cannot be negative.");
+                                        return;
+                                    }
 
                                     const payload = {
                                         customer: {

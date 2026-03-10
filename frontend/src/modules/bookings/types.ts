@@ -30,6 +30,7 @@ export interface BookingListItem {
     payment: { status: PaymentStatus };
     totalAmount: number;
     isBulk: boolean;
+    vehicles?: { type: string }[];
 }
 
 export interface Pagination {

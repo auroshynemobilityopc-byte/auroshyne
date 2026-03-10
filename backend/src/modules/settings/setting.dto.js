@@ -8,6 +8,10 @@ exports.updateSettingDTO = Joi.object({
     }),
     bookingDays: Joi.number().min(1),
     taxPercentage: Joi.number().min(0),
+    bulkDiscount: Joi.object({
+        twoVehicles: Joi.number().min(0).max(100),
+        threeOrMoreVehicles: Joi.number().min(0).max(100)
+    }),
     videoLink: Joi.string().allow(''),
     isBookingClosed: Joi.boolean(),
     bookingClosedMessage: Joi.string().allow(''),

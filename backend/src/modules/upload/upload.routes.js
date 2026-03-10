@@ -5,9 +5,11 @@ const cloudinary = require('cloudinary').v2;
 const { protect } = require('../../common/middleware/auth.middleware');
 const { allowRoles } = require('../../common/middleware/role.middleware');
 
+const { ADMIN } = require('../../common/constants/roles');
+
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.post('/', protect, allowRoles('super_admin', 'admin'), upload.single('image'), (req, res) => {
+router.post('/', protect, allowRoles(ADMIN), upload.single('image'), (req, res) => {
     if (!req.file) {
         return res.status(400).json({ success: false, message: 'No image provided' });
     }

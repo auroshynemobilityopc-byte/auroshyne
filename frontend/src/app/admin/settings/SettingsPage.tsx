@@ -32,6 +32,10 @@ export const SettingsPage: React.FC = () => {
         },
         bookingDays: 7,
         taxPercentage: 0,
+        bulkDiscount: {
+            twoVehicles: 5,
+            threeOrMoreVehicles: 10,
+        },
         videoLink: "",
         isBookingClosed: false,
         bookingClosedMessage: "Temporary bookings are closed and will be continued soon.",
@@ -75,6 +79,10 @@ export const SettingsPage: React.FC = () => {
                 },
                 bookingDays: settingsData.data.bookingDays || 7,
                 taxPercentage: settingsData.data.taxPercentage || 0,
+                bulkDiscount: {
+                    twoVehicles: settingsData.data.bulkDiscount?.twoVehicles ?? 5,
+                    threeOrMoreVehicles: settingsData.data.bulkDiscount?.threeOrMoreVehicles ?? 10,
+                },
                 videoLink: settingsData.data.videoLink || "",
                 isBookingClosed: settingsData.data.isBookingClosed || false,
                 bookingClosedMessage: settingsData.data.bookingClosedMessage || "Temporary bookings are closed and will be continued soon.",
@@ -155,6 +163,17 @@ export const SettingsPage: React.FC = () => {
                 ...prev.slotsCount,
                 [name]: Number(value),
             },
+        }));
+    };
+
+    const handleBulkDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            bulkDiscount: {
+                ...prev.bulkDiscount,
+                [name]: Number(value),
+            } as any,
         }));
     };
 
@@ -316,6 +335,30 @@ export const SettingsPage: React.FC = () => {
                             value={formData.taxPercentage}
                             onChange={handleChange}
                             min="0"
+                            required
+                        />
+                    </FormField>
+                    <FormField label="Bulk Discount - 2 Vehicles (%)">
+                        <Input
+                            type="number"
+                            step="0.1"
+                            name="twoVehicles"
+                            value={formData.bulkDiscount?.twoVehicles ?? 5}
+                            onChange={handleBulkDiscountChange}
+                            min="0"
+                            max="100"
+                            required
+                        />
+                    </FormField>
+                    <FormField label="Bulk Discount - 3+ Vehicles (%)">
+                        <Input
+                            type="number"
+                            step="0.1"
+                            name="threeOrMoreVehicles"
+                            value={formData.bulkDiscount?.threeOrMoreVehicles ?? 10}
+                            onChange={handleBulkDiscountChange}
+                            min="0"
+                            max="100"
                             required
                         />
                     </FormField>

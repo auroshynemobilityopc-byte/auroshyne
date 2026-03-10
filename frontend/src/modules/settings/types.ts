@@ -13,6 +13,10 @@ export interface Setting {
     };
     bookingDays: number;
     taxPercentage: number;
+    bulkDiscount?: {
+        twoVehicles: number;
+        threeOrMoreVehicles: number;
+    };
     videoLink: string;
     isBookingClosed: boolean;
     bookingClosedMessage: string;
@@ -49,6 +53,10 @@ export interface UpdateSettingPayload {
     };
     bookingDays?: number;
     taxPercentage?: number;
+    bulkDiscount?: {
+        twoVehicles: number;
+        threeOrMoreVehicles: number;
+    };
     videoLink?: string;
     isBookingClosed?: boolean;
     bookingClosedMessage?: string;

@@ -44,6 +44,8 @@ export interface StepProps {
     loadingServices?: boolean;
     loadingAddons?: boolean;
     totalEstimate?: number;
+    bulkDiscount?: number;
+    step?: number;
     slotStatus?: 'idle' | 'available' | 'unavailable';
     slotConflictVehicle?: string | null;
 }

@@ -6,13 +6,21 @@ import type { StepProps } from "../../types";
 import { validateDiscount } from "../../api";
 import { useSettings } from "../../../../../modules/settings/hooks";
 
-export default function ReviewStep({ booking, updateBooking, services = [], addons = [], totalEstimate = 0 }: StepProps) {
+export default function ReviewStep({ booking, updateBooking, services = [], addons = [], totalEstimate = 0, bulkDiscount = 0 }: StepProps) {
     const [code, setCode] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const { data: settingsData } = useSettings();
     const taxPercentage = settingsData?.data?.taxPercentage || 0;
+    const twoVehiclesDiscount = settingsData?.data?.bulkDiscount?.twoVehicles ?? 5;
+    const threeOrMoreVehiclesDiscount = settingsData?.data?.bulkDiscount?.threeOrMoreVehicles ?? 10;
+
+    const effectiveDiscount = Math.max(booking.discountValue || 0, bulkDiscount || 0);
+    const isBulkDiscountApplied = effectiveDiscount === bulkDiscount && bulkDiscount > 0;
+    const discountLabel = isBulkDiscountApplied
+        ? `Bulk Booking (${booking.vehicles.length >= 3 ? `${threeOrMoreVehiclesDiscount}%` : `${twoVehiclesDiscount}%`})`
+        : (booking.discountCode || 'Discount');
 
     const handleApply = async () => {
         if (!code.trim()) return;
@@ -131,22 +139,22 @@ export default function ReviewStep({ booking, updateBooking, services = [], addo
                         <span>Subtotal</span>
                         <span>₹{totalEstimate}</span>
                     </div>
-                    {booking.discountValue > 0 && (
+                    {effectiveDiscount > 0 && (
                         <div className="flex justify-between items-center text-sm text-emerald-400 font-medium">
-                            <span>Discount {booking.discountCode ? `(${booking.discountCode})` : ''}</span>
-                            <span>- ₹{booking.discountValue.toFixed(2)}</span>
+                            <span>Discount ({discountLabel})</span>
+                            <span>- ₹{effectiveDiscount.toFixed(2)}</span>
                         </div>
                     )}
                     {taxPercentage > 0 && (
                         <div className="flex justify-between items-center text-sm text-text-grey">
                             <span>Tax ({taxPercentage}%)</span>
-                            <span>+ ₹{((totalEstimate - (booking.discountValue || 0)) * (taxPercentage / 100)).toFixed(2)}</span>
+                            <span>+ ₹{((totalEstimate - effectiveDiscount) * (taxPercentage / 100)).toFixed(2)}</span>
                         </div>
                     )}
                     <div className="flex justify-between items-center pt-2">
                         <span className="font-bold text-lg">Amount to Pay</span>
                         <span className="font-bold text-2xl text-brand-blue">
-                            ₹{((totalEstimate - (booking.discountValue || 0)) * (1 + taxPercentage / 100)).toFixed(2)}
+                            ₹{((totalEstimate - effectiveDiscount) * (1 + taxPercentage / 100)).toFixed(2)}
                         </span>
                     </div>
                 </div>

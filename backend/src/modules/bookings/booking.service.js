@@ -89,11 +89,23 @@ const checkSlotCapacityTx = async (date, slot, count, session) => {
     }
 };
 
-const calculateDiscount = (totalAmount, vehicleCount) => {
+const calculateDiscount = (totalAmount, vehicleCount, setting) => {
     let discount = 0;
 
-    if (vehicleCount === 2) discount = totalAmount * 0.05;
-    if (vehicleCount >= 3) discount = totalAmount * 0.1;
+    let twoVehiclesDiscount = 5;
+    let threeOrMoreVehiclesDiscount = 10;
+
+    if (setting && setting.bulkDiscount) {
+        if (typeof setting.bulkDiscount.twoVehicles === 'number') {
+            twoVehiclesDiscount = setting.bulkDiscount.twoVehicles;
+        }
+        if (typeof setting.bulkDiscount.threeOrMoreVehicles === 'number') {
+            threeOrMoreVehiclesDiscount = setting.bulkDiscount.threeOrMoreVehicles;
+        }
+    }
+
+    if (vehicleCount === 2) discount = totalAmount * (twoVehiclesDiscount / 100);
+    if (vehicleCount >= 3) discount = totalAmount * (threeOrMoreVehiclesDiscount / 100);
 
     return discount;
 };
@@ -120,7 +132,7 @@ exports.createBooking = async (payload, userId) => {
             vehicles.push({ ...v, price });
         }
 
-        let discount = calculateDiscount(totalAmount, vehicles.length);
+        let discount = calculateDiscount(totalAmount, vehicles.length, setting);
 
         if (payload.discountCode) {
             const discountObj = await discountService.validateDiscountCode(payload.discountCode, totalAmount, userId);
@@ -147,6 +159,10 @@ exports.createBooking = async (payload, userId) => {
         let finalAmount = totalAmount - discount;
         const tax = finalAmount * (taxPercentage / 100);
         finalAmount = finalAmount + tax;
+
+        if (finalAmount < 0) {
+            throw new Error("Invalid booking amount. The final amount cannot be negative.");
+        }
 
         const booking = await Booking.create(
             [
@@ -205,7 +221,7 @@ exports.bulkBooking = async (payload, userId) => {
                 vehicles.push({ ...v, price });
             }
 
-            let discount = calculateDiscount(totalAmount, vehicles.length);
+            let discount = calculateDiscount(totalAmount, vehicles.length, setting);
 
             if (b.discountCode) {
                 const discountObj = await discountService.validateDiscountCode(b.discountCode, totalAmount, userId);
@@ -232,6 +248,10 @@ exports.bulkBooking = async (payload, userId) => {
             let finalAmount = totalAmount - discount;
             const tax = finalAmount * (taxPercentage / 100);
             finalAmount = finalAmount + tax;
+
+            if (finalAmount < 0) {
+                throw new Error("Invalid booking amount. The final amount cannot be negative.");
+            }
 
             const booking = await Booking.create(
                 [

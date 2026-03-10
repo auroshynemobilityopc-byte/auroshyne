@@ -7,7 +7,7 @@ export default function PaymentStep({ booking, updateBooking }: StepProps) {
             <h2 className="text-xl font-bold">Select Payment Mode</h2>
             <div className="space-y-3">
                 {[
-                    { id: 'online', label: 'Online Payment', sub: 'Credit/Debit Card, Netbanking' },
+                    // { id: 'online', label: 'Online Payment', sub: 'Credit/Debit Card, Netbanking' },
                     { id: 'upi', label: 'UPI', sub: 'GPay, PhonePe, Paytm' },
                     { id: 'cash', label: 'Cash after service', sub: 'Pay to technician' }
                 ].map((mode) => (

@@ -10,7 +10,9 @@ export default function AddonSelectionStep({ booking, updateBooking, addons = []
             <div className="flex justify-between items-center">
                 <div>
                     <h2 className="text-xl font-bold">Add-ons (Optional)</h2>
-                    <span className="text-sm text-text-grey">Select multiple</span>
+                    <p className="text-sm text-text-grey mt-1">
+                        Select multiple add-ons. You can skip this step if you don't want any.
+                    </p>
                 </div>
                 {booking.isBulkBooking && booking.vehicles.length > 1 && (
                     <button

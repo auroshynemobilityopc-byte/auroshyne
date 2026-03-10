@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { MapPin, ChevronDown, ChevronUp, CheckCircle2, Home, Briefcase } from "lucide-react";
+import { MapPin, ChevronDown, ChevronUp, CheckCircle2, Home, Briefcase, Search, Navigation, Loader2 } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import type { StepProps } from "../../types";
 import { useSavedData } from "../../../profile/hooks";
-import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
 
@@ -30,6 +30,14 @@ function LocationMarker({ position, setPosition }: { position: L.LatLng | null; 
     return position === null ? null : <Marker position={position}></Marker>;
 }
 
+function MapUpdater({ center }: { center: L.LatLng | null }) {
+    const map = useMap();
+    if (center) {
+        map.flyTo(center, 15);
+    }
+    return null;
+}
+
 export default function AddressStep({ booking, updateBooking }: StepProps) {
     const { data: savedResult } = useSavedData();
     const savedAddresses: any[] = savedResult?.data?.savedAddresses ?? [];
@@ -50,6 +58,59 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
     };
 
     const labelIcons: Record<string, any> = { Home, Office: Briefcase, Work: Briefcase };
+
+    const [searchQuery, setSearchQuery] = useState("");
+    const [searchResults, setSearchResults] = useState<any[]>([]);
+    const [isSearching, setIsSearching] = useState(false);
+
+    const handleSearch = async () => {
+        if (!searchQuery) return;
+        setIsSearching(true);
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`);
+            const data = await res.json();
+            setSearchResults(data);
+        } catch (e) {
+            console.error("Geocoding failed", e);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    const selectSearchResult = (result: any) => {
+        const lat = parseFloat(result.lat);
+        const lng = parseFloat(result.lon);
+
+        updateBooking({
+            address: {
+                ...booking.address,
+                street: result.display_name,
+                mapLocation: { lat, lng }
+            }
+        });
+        setSearchResults([]);
+        setSearchQuery("");
+    };
+
+    const getCurrentLocation = () => {
+        if ("geolocation" in navigator) {
+            navigator.geolocation.getCurrentPosition((position) => {
+                updateBooking({
+                    address: {
+                        ...booking.address,
+                        mapLocation: {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        }
+                    }
+                });
+            }, () => {
+                alert("Unable to retrieve your location. Please check your browser permissions.");
+            });
+        } else {
+            alert("Geolocation is not supported by your browser");
+        }
+    };
 
     return (
         <div className="space-y-6">
@@ -180,11 +241,75 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
                     )}
                 </div>
 
-                <div className="space-y-2 mt-4">
-                    <label className="text-sm text-text-grey font-medium flex items-center justify-between">
-                        <span>Pin Location on Map {booking.address.mapLocation && <CheckCircle2 className="inline w-4 h-4 text-brand-blue ml-2" />}</span>
+                <div className="space-y-4 mt-8">
+                    <label className="text-sm font-semibold text-white flex items-center justify-between">
+                        <span className="flex items-center gap-2">
+                            <MapPin className="w-4 h-4 text-brand-blue" />
+                            Pin Location on Map
+                            {booking.address.mapLocation && <CheckCircle2 className="inline w-4 h-4 text-brand-blue ml-1" />}
+                        </span>
+
+                        <button
+                            type="button"
+                            onClick={getCurrentLocation}
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-blue/10 hover:bg-brand-blue/20 text-brand-blue text-xs font-semibold"
+                        >
+                            <Navigation className="w-3.5 h-3.5" />
+                            Use Current
+                        </button>
                     </label>
-                    <div className="h-[250px] w-full rounded-2xl overflow-hidden border border-white/10 z-0 relative">
+
+                    {/* Search Location */}
+                    <div className="relative z-10">
+                        <div className="flex bg-charcoal-800 border border-white/10 rounded-xl overflow-hidden focus-within:border-brand-blue focus-within:ring-1 focus-within:ring-brand-blue/50">
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search location manually..."
+                                className="w-full bg-transparent p-3 text-sm text-white focus:outline-none"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                        e.preventDefault();
+                                        handleSearch();
+                                    }
+                                }}
+                            />
+                            <button
+                                type="button"
+                                onClick={handleSearch}
+                                disabled={isSearching}
+                                className="px-4 bg-zinc-800 hover:bg-zinc-700 text-white flex items-center justify-center transition-colors"
+                            >
+                                {isSearching ? <Loader2 className="w-4 h-4 animate-spin text-zinc-400" /> : <Search className="w-4 h-4 text-zinc-400" />}
+                            </button>
+                        </div>
+
+                        {/* Search Results Dropdown */}
+                        <AnimatePresence>
+                            {searchResults.length > 0 && (
+                                <motion.div
+                                    initial={{ opacity: 0, y: -5 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -5 }}
+                                    className="absolute left-0 right-0 top-full mt-2 bg-zinc-900 border border-zinc-800 rounded-xl max-h-48 overflow-y-auto shadow-xl z-50 flex flex-col"
+                                >
+                                    {searchResults.map((result, idx) => (
+                                        <button
+                                            key={idx}
+                                            type="button"
+                                            onClick={() => selectSearchResult(result)}
+                                            className="text-left p-3 hover:bg-zinc-800 text-xs text-zinc-300 border-b border-zinc-800/50 last:border-b-0 transition-colors"
+                                        >
+                                            {result.display_name}
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    <div className="h-[250px] w-full rounded-2xl overflow-hidden border border-white/10 z-0 relative shadow-inner">
                         <MapContainer
                             center={booking.address.mapLocation ? [booking.address.mapLocation.lat, booking.address.mapLocation.lng] : [17.3850, 78.4867]}
                             zoom={13}
@@ -195,6 +320,9 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
                                 attribution='&copy; OpenStreetMap contributors'
                                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                             />
+                            <MapUpdater
+                                center={booking.address.mapLocation ? L.latLng(booking.address.mapLocation.lat, booking.address.mapLocation.lng) : null}
+                            />
                             <LocationMarker
                                 position={booking.address.mapLocation ? L.latLng(booking.address.mapLocation.lat, booking.address.mapLocation.lng) : null}
                                 setPosition={(p) => {
@@ -203,7 +331,7 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
                             />
                         </MapContainer>
                     </div>
-                    <p className="text-xs text-zinc-500">Tap anywhere on the map to drop a pin.</p>
+                    <p className="text-xs text-zinc-500 font-medium">Tap anywhere on the map to manually drop the pin.</p>
                 </div>
             </div>
         </div>
