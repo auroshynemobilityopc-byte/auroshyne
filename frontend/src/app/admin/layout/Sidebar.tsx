@@ -12,7 +12,8 @@ import {
     UserCircle,
     LogOut,
     Mail,
-    Settings as SettingsIcon
+    Settings as SettingsIcon,
+    Star
 } from "lucide-react";
 
 interface MenuItem {
@@ -29,6 +30,7 @@ const menu: MenuItem[] = [
     { label: "Services", path: "/admin/services", icon: <Layers className="w-4 h-4" /> },
     { label: "Add-ons", path: "/admin/addons", icon: <PlusSquare className="w-4 h-4" /> },
     { label: "Email Templates", path: "/admin/email-templates", icon: <Mail className="w-4 h-4" /> },
+    { label: "Reviews", path: "/admin/reviews", icon: <Star className="w-4 h-4" /> },
     { label: "Settings", path: "/admin/settings", icon: <SettingsIcon className="w-4 h-4" /> },
 ];
 

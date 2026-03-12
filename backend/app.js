@@ -18,6 +18,7 @@ const settingRoutes = require('./src/modules/settings/setting.routes');
 const mailRoutes = require('./src/modules/mail/mail.routes');
 const emailTemplateRoutes = require('./src/modules/emailTemplates/emailTemplate.routes');
 const uploadRoutes = require('./src/modules/upload/upload.routes');
+const reviewRoutes = require('./src/modules/reviews/review.routes');
 const errorHandler = require('./src/common/middleware/error.middleware');
 const { globalLimiter } = require('./src/common/middleware/rateLimit.middleware');
 const cors = require('./src/config/cors');
@@ -87,6 +88,7 @@ app.use('/settings', settingRoutes);
 app.use('/mail', mailRoutes);
 app.use('/email-templates', emailTemplateRoutes);
 app.use('/upload', uploadRoutes);
+app.use('/reviews', reviewRoutes);
 app.use(errorHandler);
 
 module.exports = app;

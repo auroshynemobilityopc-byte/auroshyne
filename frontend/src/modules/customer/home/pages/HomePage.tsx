@@ -5,10 +5,14 @@ import { useServices } from "../../booking/hooks";
 import { useSettings } from "../../../settings/hooks";
 import p1 from "../../../../assets/p1.avif";
 import ImageGallery from "../components/ImageGallery";
+import { useTopReviews } from "../../../reviews/hooks";
+import { Quote } from "lucide-react";
+import { cn } from "../../lib/utils";
 
 export default function HomePage() {
     const { data: servicesResult } = useServices();
     const { data: settingsData } = useSettings();
+    const { data: topReviews, isLoading: reviewsLoading } = useTopReviews();
     const ALL_SERVICES = servicesResult?.data || [];
     const videoLink = settingsData?.data?.videoLink;
     const galleryImages = settingsData?.data?.galleryImages || [];
@@ -240,6 +244,63 @@ export default function HomePage() {
                             className="relative rounded-3xl shadow-2xl border border-white/10"
                         />
                     </div>
+                </div>
+            </section>
+
+            {/* ================= TESTIMONIALS ================= */}
+            <section className="p-6 py-20 bg-charcoal-900/50">
+                <div className="max-w-7xl mx-auto">
+                    <div className="text-center mb-12">
+                        <span className="text-brand-blue font-bold tracking-wider uppercase text-sm mb-2 block">Testimonials</span>
+                        <h2 className="text-3xl md:text-4xl font-bold">What Our Customers Say</h2>
+                    </div>
+
+                    {reviewsLoading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            {[1, 2, 3].map((i) => (
+                                <div key={i} className="h-64 bg-charcoal-800 animate-pulse rounded-2xl border border-white/5" />
+                            ))}
+                        </div>
+                    ) : topReviews && topReviews.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            {topReviews.map((review: any, i: number) => (
+                                <motion.div
+                                    key={review._id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    whileInView={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: i * 0.1 }}
+                                    className="bg-charcoal-800 p-8 rounded-2xl border border-white/5 relative group"
+                                >
+                                    <Quote className="absolute top-6 right-6 w-8 h-8 text-brand-blue/20 group-hover:text-brand-blue/40 transition-colors" />
+                                    <div className="flex gap-1 mb-4">
+                                        {[1, 2, 3, 4, 5].map((star) => (
+                                            <Star
+                                                key={star}
+                                                className={cn(
+                                                    "w-4 h-4",
+                                                    star <= review.rating ? "text-yellow-400 fill-yellow-400" : "text-zinc-700"
+                                                )}
+                                            />
+                                        ))}
+                                    </div>
+                                    <p className="text-zinc-300 italic mb-6 relative z-10">"{review.comment || "Amazing service, highly recommended!"}"</p>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-full bg-brand-blue/10 flex items-center justify-center text-brand-blue font-bold">
+                                            {review.customerId?.name?.charAt(0) || "U"}
+                                        </div>
+                                        <div>
+                                            <p className="font-bold text-white">{review.customerId?.name || "Verified Customer"}</p>
+                                            <p className="text-xs text-text-grey">Happy Customer</p>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-12 bg-charcoal-800/50 rounded-2xl border border-dashed border-white/10">
+                            <p className="text-text-grey italic">Real-time reviews from our customers will appear here soon.</p>
+                        </div>
+                    )}
                 </div>
             </section>
 

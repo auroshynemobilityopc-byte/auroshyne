@@ -195,7 +195,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <ul className="space-y-2 text-sm text-text-grey">
               <li>+91 9346748605</li>
               <li>auroshynemobility@gmail.com</li>
-              <li>Hyderabad, Telangana</li>
+              <li>Visakhapatnam, Andhra Pradesh</li>
             </ul>
           </div>
         </div>

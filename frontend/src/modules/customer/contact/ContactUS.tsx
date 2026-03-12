@@ -59,11 +59,22 @@ export default function ContactUS() {
                         <div>
                             <p className="text-text-grey text-sm">Registered Office</p>
                             <p className="text-sm leading-relaxed">
-                                D.No.1-111-33, Plot No.143, Sector-8,
+                                Auro-Shyne Mobility (OPC) Private Limited,
                                 <br />
-                                MVP Colony, Visakhapatnam,
+                                20-91-18 B, Relliveedhi Kotha,
                                 <br />
-                                Visakhapatnam – 530017
+                                Visakhapatnam – 530001, Andhra Pradesh
+                            </p>
+                        </div>
+
+                        <div>
+                            <p className="text-text-grey text-sm">Corporate Office</p>
+                            <p className="text-sm leading-relaxed">
+                                Auro-Shyne Mobility (OPC) Private Limited,
+                                <br />
+                                D.No 1-11-33, Plot No.143, Sector-8,
+                                <br />
+                                MVP Colony, Visakhapatnam – 530017
                             </p>
                         </div>
                     </div>

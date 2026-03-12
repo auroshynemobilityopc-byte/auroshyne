@@ -8,6 +8,9 @@ import { toast } from "react-hot-toast";
 // @ts-ignore
 import { load } from "@cashfreepayments/cashfree-js";
 import { EditBookingSheet } from "./EditBookingSheet";
+import { ReviewSheet } from "./ReviewSheet";
+import { Star } from "lucide-react";
+import { useReviewForBooking } from "../../../reviews/hooks";
 
 interface Props {
     booking: any;
@@ -24,6 +27,9 @@ export const HistoryDetailsSheet = ({ booking, services, addons, open, onClose, 
     const [showRefundForm, setShowRefundForm] = useState(false);
     const [showPaymentForm, setShowPaymentForm] = useState(false);
     const [confirmCancel, setConfirmCancel] = useState(false);
+    const [reviewOpen, setReviewOpen] = useState(false);
+
+    const { data: existingReview } = useReviewForBooking(booking?.bookingId ? booking._id : null);
 
     const afterAction = () => {
         onRefresh?.();
@@ -39,6 +45,7 @@ export const HistoryDetailsSheet = ({ booking, services, addons, open, onClose, 
             setShowRefundForm(false);
             setRefundReason("");
             setEditOpen(false);
+            setReviewOpen(false);
         }
     }, [open]);
 
@@ -164,6 +171,17 @@ export const HistoryDetailsSheet = ({ booking, services, addons, open, onClose, 
                                         <RotateCcw className="w-4 h-4" /> Request Refund
                                     </button>
                                 )}
+                            </div>
+                        )}
+
+                        {isCompleted && (
+                            <div className="flex gap-2 flex-wrap">
+                                <button
+                                    onClick={() => setReviewOpen(true)}
+                                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-yellow-400/10 hover:bg-yellow-400/20 text-yellow-400 border border-yellow-400/20 text-sm font-medium transition-colors"
+                                >
+                                    <Star className="w-4 h-4" /> {existingReview ? "View / Edit Review" : "Leave a Review"}
+                                </button>
                             </div>
                         )}
 
@@ -378,6 +396,13 @@ export const HistoryDetailsSheet = ({ booking, services, addons, open, onClose, 
                 open={editOpen}
                 onClose={() => setEditOpen(false)}
                 onSaved={() => { setEditOpen(false); afterAction(); }}
+            />
+
+            {/* Review Sheet */}
+            <ReviewSheet
+                booking={booking}
+                open={reviewOpen}
+                onClose={() => setReviewOpen(false)}
             />
         </>
     );
