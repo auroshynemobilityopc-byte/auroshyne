@@ -13,6 +13,7 @@ exports.updateSettingDTO = Joi.object({
         threeOrMoreVehicles: Joi.number().min(0).max(100)
     }),
     videoLink: Joi.string().allow(''),
+    whatsappNumber: Joi.string().allow(''),
     isBookingClosed: Joi.boolean(),
     bookingClosedMessage: Joi.string().allow(''),
     galleryImages: Joi.array().items(Joi.string().allow('')),

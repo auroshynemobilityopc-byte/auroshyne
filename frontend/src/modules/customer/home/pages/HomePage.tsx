@@ -15,6 +15,7 @@ export default function HomePage() {
     const { data: topReviews, isLoading: reviewsLoading } = useTopReviews();
     const ALL_SERVICES = servicesResult?.data || [];
     const videoLink = settingsData?.data?.videoLink;
+    const whatsappNumber = settingsData?.data?.whatsappNumber || "919346748605";
     const galleryImages = settingsData?.data?.galleryImages || [];
 
     // Deduplicate by name and find the starting price
@@ -325,7 +326,7 @@ export default function HomePage() {
 
             {/* ================= WHATSAPP FLOATING BUTTON ================= */}
             <a
-                href="https://wa.me/919876543210?text=Hi%2C%20I%27d%20like%20to%20book%20a%20car%20wash%20service!"
+                href={`https://wa.me/${whatsappNumber}?text=Hi%2C%20I%27d%20like%20to%20book%20a%20car%20wash%20service!`}
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Chat on WhatsApp"

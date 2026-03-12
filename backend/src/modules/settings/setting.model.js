@@ -14,6 +14,7 @@ const settingSchema = new mongoose.Schema(
             threeOrMoreVehicles: { type: Number, default: 10 }
         },
         videoLink: { type: String, default: '' },
+        whatsappNumber: { type: String, default: '' },
         isBookingClosed: { type: Boolean, default: false },
         bookingClosedMessage: { type: String, default: 'Temporary bookings are closed and will be continued soon.' },
         galleryImages: [{ type: String }],

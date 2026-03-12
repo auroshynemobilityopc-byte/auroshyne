@@ -2,11 +2,14 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { customerApi } from "../../../app/customer/customerApi";
 import toast from "react-hot-toast";
+import { useSettings } from "../../settings/hooks";
 
 export default function ContactUS() {
     const [subject, setSubject] = useState("");
     const [message, setMessage] = useState("");
     const [sending, setSending] = useState(false);
+    const { data: settingsData } = useSettings();
+    const whatsappNumber = settingsData?.data?.whatsappNumber || "919346748605";
 
     const handleSend = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -42,7 +45,7 @@ export default function ContactUS() {
 
                         <div>
                             <p className="text-text-grey text-sm">Phone</p>
-                            <p className="font-semibold">+91 9346748605</p>
+                            <p className="font-semibold">+{whatsappNumber}</p>
                         </div>
 
                         <div>
@@ -140,8 +143,9 @@ export default function ContactUS() {
                             </div>
 
                             <a
-                                href="https://wa.me/919346748605"
+                                href={`https://wa.me/${whatsappNumber}`}
                                 target="_blank"
+                                rel="noopener noreferrer"
                                 className="mt-4 inline-block bg-white text-brand-blue px-6 py-3 rounded-xl font-bold text-center hover:bg-gray-100"
                             >
                                 Chat on WhatsApp

@@ -37,6 +37,7 @@ export const SettingsPage: React.FC = () => {
             threeOrMoreVehicles: 10,
         },
         videoLink: "",
+        whatsappNumber: "",
         isBookingClosed: false,
         bookingClosedMessage: "Temporary bookings are closed and will be continued soon.",
         galleryImages: [],
@@ -84,6 +85,7 @@ export const SettingsPage: React.FC = () => {
                     threeOrMoreVehicles: settingsData.data.bulkDiscount?.threeOrMoreVehicles ?? 10,
                 },
                 videoLink: settingsData.data.videoLink || "",
+                whatsappNumber: settingsData.data.whatsappNumber || "",
                 isBookingClosed: settingsData.data.isBookingClosed || false,
                 bookingClosedMessage: settingsData.data.bookingClosedMessage || "Temporary bookings are closed and will be continued soon.",
                 galleryImages: settingsData.data.galleryImages || [],
@@ -117,7 +119,7 @@ export const SettingsPage: React.FC = () => {
         } else {
             setFormData((prev) => ({
                 ...prev,
-                [name]: name === "videoLink" || name === "bookingClosedMessage" ? value : Number(value),
+                [name]: name === "videoLink" || name === "whatsappNumber" || name === "bookingClosedMessage" ? value : Number(value),
             }));
         }
     };
@@ -367,15 +369,26 @@ export const SettingsPage: React.FC = () => {
 
             <Card className="p-6">
                 <h2 className="text-lg font-semibold text-white mb-4">Media Links</h2>
-                <FormField label="Home Page Video Link">
-                    <Input
-                        type="url"
-                        name="videoLink"
-                        value={formData.videoLink}
-                        onChange={handleChange}
-                        placeholder="https://youtube.com/..."
-                    />
-                </FormField>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <FormField label="Home Page Video Link">
+                        <Input
+                            type="url"
+                            name="videoLink"
+                            value={formData.videoLink}
+                            onChange={handleChange}
+                            placeholder="https://youtube.com/..."
+                        />
+                    </FormField>
+                    <FormField label="WhatsApp Number">
+                        <Input
+                            type="text"
+                            name="whatsappNumber"
+                            value={formData.whatsappNumber}
+                            onChange={handleChange}
+                            placeholder="+919876543210"
+                        />
+                    </FormField>
+                </div>
             </Card>
 
             <Card className="p-6 border-red-500/30">

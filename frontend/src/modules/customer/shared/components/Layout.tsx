@@ -4,10 +4,13 @@ import { cn } from "../../lib/utils";
 import { motion } from "motion/react";
 import { NotificationBell } from "../../notifications/components/NotificationBell";
 import { useCustomerAuth } from "../../../../app/customer/CustomerAuthContext";
+import { useSettings } from "../../../settings/hooks";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const { isAuthenticated } = useCustomerAuth();
+  const { data: settingsData } = useSettings();
+  const whatsappNumber = settingsData?.data?.whatsappNumber || "919346748605";
 
   const navItems = [
     { icon: Home, label: "Home", path: "/" },
@@ -57,7 +60,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="flex items-center gap-3">
-          <a href="tel:+919346748605" className="flex items-center gap-2 text-sm font-medium text-text-grey hover:text-white transition-colors">
+          <a href={`tel:+${whatsappNumber}`} className="flex items-center gap-2 text-sm font-medium text-text-grey hover:text-white transition-colors">
             <Phone className="w-4 h-4" />
             <span>Support</span>
           </a>
@@ -109,7 +112,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* ================= WHATSAPP BUTTON ================= */}
       {location.pathname === '/' && (
         <a
-          href="https://wa.me/919346748605"
+          href={`https://wa.me/${whatsappNumber}`}
           target="_blank"
           rel="noopener noreferrer"
           className="fixed bottom-24 right-4 md:bottom-8 md:right-8 z-40 bg-[#25D366] text-white p-3 md:p-4 rounded-full shadow-lg hover:bg-[#128C7E] transition-all hover:scale-110 flex items-center justify-center group"
@@ -193,7 +196,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div>
             <h3 className="font-bold mb-4">Contact</h3>
             <ul className="space-y-2 text-sm text-text-grey">
-              <li>+91 9346748605</li>
+              <li>+{whatsappNumber}</li>
               <li>support@auroshynemobility.com</li>
               <li>Visakhapatnam, Andhra Pradesh</li>
             </ul>

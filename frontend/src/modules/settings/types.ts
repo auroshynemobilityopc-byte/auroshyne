@@ -18,6 +18,7 @@ export interface Setting {
         threeOrMoreVehicles: number;
     };
     videoLink: string;
+    whatsappNumber?: string;
     isBookingClosed: boolean;
     bookingClosedMessage: string;
     galleryImages?: string[];
@@ -58,6 +59,7 @@ export interface UpdateSettingPayload {
         threeOrMoreVehicles: number;
     };
     videoLink?: string;
+    whatsappNumber?: string;
     isBookingClosed?: boolean;
     bookingClosedMessage?: string;
     galleryImages?: string[];
