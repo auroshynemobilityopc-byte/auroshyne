@@ -1,16 +1,16 @@
 const router = require('express').Router();
 
 const serviceController = require('./service.controller');
-const { protect } = require('../../common/middleware/auth.middleware');
+const { protect, optionalAuth } = require('../../common/middleware/auth.middleware');
 const { allowRoles } = require('../../common/middleware/role.middleware');
 const { ADMIN, CUSTOMER } = require('../../common/constants/roles');
 
 
-router.get('/', serviceController.getServices);
+router.get('/', optionalAuth, serviceController.getServices);
 
-router.get('/vehicleType/:vehicleType', protect, allowRoles(CUSTOMER, ADMIN), serviceController.getServiceByVehicleType);
+router.get('/vehicleType/:vehicleType', optionalAuth, serviceController.getServiceByVehicleType);
 
-router.get('/:id', protect, allowRoles(CUSTOMER, ADMIN), serviceController.getServiceById);
+router.get('/:id', optionalAuth, serviceController.getServiceById);
 
 router.post('/', protect, allowRoles(ADMIN), serviceController.createService);
 

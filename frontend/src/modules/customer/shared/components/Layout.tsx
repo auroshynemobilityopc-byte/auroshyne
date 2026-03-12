@@ -194,7 +194,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
             <h3 className="font-bold mb-4">Contact</h3>
             <ul className="space-y-2 text-sm text-text-grey">
               <li>+91 9346748605</li>
-              <li>auroshynemobility@gmail.com</li>
+              <li>support@auroshynemobility.com</li>
               <li>Visakhapatnam, Andhra Pradesh</li>
             </ul>
           </div>

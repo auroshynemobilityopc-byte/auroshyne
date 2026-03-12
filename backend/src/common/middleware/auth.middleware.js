@@ -32,3 +32,33 @@ exports.protect = async (req, res, next) => {
     req.user = user;
     next();
 };
+
+exports.optionalAuth = async (req, res, next) => {
+    let token;
+
+    if (req.headers.authorization?.startsWith('Bearer')) {
+        token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!token) {
+        return next();
+    }
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id);
+
+        if (user) {
+            if (
+                !user.passwordChangedAt ||
+                decoded.iat * 1000 >= user.passwordChangedAt.getTime()
+            ) {
+                req.user = user;
+            }
+        }
+    } catch (err) {
+        // If token invalid/expired, ignore and proceed as guest without error
+    }
+
+    next();
+};

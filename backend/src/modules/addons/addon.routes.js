@@ -1,7 +1,7 @@
 const router = require('express').Router();
 
 const addonController = require('./addon.controller');
-const { protect } = require('../../common/middleware/auth.middleware');
+const { protect, optionalAuth } = require('../../common/middleware/auth.middleware');
 const { allowRoles } = require('../../common/middleware/role.middleware');
 const { ADMIN, CUSTOMER } = require('../../common/constants/roles');
 
@@ -9,9 +9,9 @@ const { ADMIN, CUSTOMER } = require('../../common/constants/roles');
  * 🟢 PUBLIC READ (CUSTOMER OR ANYONE)
  */
 
-router.get('/', addonController.getAddons);
+router.get('/', optionalAuth, addonController.getAddons);
 
-router.get('/:id', protect, allowRoles(CUSTOMER, ADMIN), addonController.getAddonById);
+router.get('/:id', optionalAuth, addonController.getAddonById);
 
 router.get('/vehicleType/:vehicleType', protect, allowRoles(CUSTOMER, ADMIN), addonController.getAddonsByVehicleType);
 
