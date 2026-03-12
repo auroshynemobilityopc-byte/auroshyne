@@ -375,7 +375,7 @@ export default function BookingPage() {
                                                     }
 
                                                     // 2. Load SDK
-                                                    const cashfree = await load({ mode: "sandbox" });
+                                                    const cashfree = await load({ mode: "production" });
 
                                                     // 3. Start Checkout
                                                     cashfree.checkout({

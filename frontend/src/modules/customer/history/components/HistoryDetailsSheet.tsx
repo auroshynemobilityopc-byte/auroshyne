@@ -75,7 +75,7 @@ export const HistoryDetailsSheet = ({ booking, services, addons, open, onClose, 
 
             if (!paymentSessionId) throw new Error("Could not initialize payment");
 
-            const cashfree = await load({ mode: "sandbox" });
+            const cashfree = await load({ mode: "production" });
 
             cashfree.checkout({
                 paymentSessionId,
