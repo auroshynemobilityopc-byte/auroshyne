@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { MapPin, ChevronDown, ChevronUp, CheckCircle2, Home, Briefcase, Search, Navigation, Loader2 } from "lucide-react";
+import { MapPin, ChevronDown, ChevronUp, CheckCircle2, Home, Briefcase, Search, Navigation, Loader2, Camera, X, ImagePlus, AlertCircle } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import type { StepProps } from "../../types";
 import { useSavedData } from "../../../profile/hooks";
@@ -63,6 +63,41 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
     const [searchResults, setSearchResults] = useState<any[]>([]);
     const [isSearching, setIsSearching] = useState(false);
 
+    // ── Parking image state ──────────────────────────────────────────────────
+    const parkingFileRef = useRef<HTMLInputElement>(null);
+    const parkingImages: File[] = booking.parkingImages ?? [];
+    const [imagePreviews, setImagePreviews] = useState<string[]>(() =>
+        // Rebuild previews only from valid File/Blob objects
+        parkingImages
+            .filter(f => (f as any) instanceof File || (f as any) instanceof Blob)
+            .map(f => URL.createObjectURL(f))
+    );
+
+    const handleParkingImageAdd = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+
+        // Max 6 total
+        const remaining = 6 - parkingImages.length;
+        const toAdd = files.slice(0, remaining);
+
+        const newPreviews = toAdd.map(f => URL.createObjectURL(f));
+        const updated = [...parkingImages, ...toAdd];
+        setImagePreviews(prev => [...prev, ...newPreviews]);
+        updateBooking({ parkingImages: updated });
+
+        // Reset file input so same file can be re-added if needed
+        if (parkingFileRef.current) parkingFileRef.current.value = "";
+    };
+
+    const handleParkingImageRemove = (idx: number) => {
+        URL.revokeObjectURL(imagePreviews[idx]);
+        const updatedFiles = parkingImages.filter((_, i) => i !== idx);
+        const updatedPreviews = imagePreviews.filter((_, i) => i !== idx);
+        setImagePreviews(updatedPreviews);
+        updateBooking({ parkingImages: updatedFiles });
+    };
+
     const handleSearch = async () => {
         if (!searchQuery) return;
         setIsSearching(true);
@@ -111,6 +146,11 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
             alert("Geolocation is not supported by your browser");
         }
     };
+
+    const MIN_IMAGES = 2;
+    const MAX_IMAGES = 6;
+    const imageCount = parkingImages.length;
+    const needsMore = imageCount < MIN_IMAGES;
 
     return (
         <div className="space-y-6">
@@ -241,6 +281,131 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
                     )}
                 </div>
 
+                {/* ── Parking Area Photos ─────────────────────────────────────── */}
+                <div className="mt-6 space-y-3">
+                    {/* Header */}
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <label className="text-sm font-semibold text-white flex items-center gap-2">
+                                <Camera className="w-4 h-4 text-brand-blue" />
+                                Parking Area Photos
+                                <span className="text-red-400">*</span>
+                            </label>
+                            <p className="text-xs text-zinc-400 mt-1">
+                                Upload at least {MIN_IMAGES} photos of your parking area so our team can easily find your car.
+                            </p>
+                        </div>
+                        <span className={cn(
+                            "text-xs font-bold px-2.5 py-1 rounded-full flex-shrink-0 ml-2",
+                            imageCount >= MIN_IMAGES ? "bg-green-500/20 text-green-400" : "bg-amber-500/20 text-amber-400"
+                        )}>
+                            {imageCount}/{MAX_IMAGES}
+                        </span>
+                    </div>
+
+                    {/* Tip box */}
+                    <div className="flex items-start gap-2.5 bg-brand-blue/10 border border-brand-blue/20 rounded-xl p-3">
+                        <AlertCircle className="w-4 h-4 text-brand-blue flex-shrink-0 mt-0.5" />
+                        <div className="text-xs text-zinc-300 space-y-1">
+                            <p className="font-semibold text-brand-blue">Tips for good location photos:</p>
+                            <ul className="space-y-0.5 text-zinc-400 list-disc list-inside">
+                                <li>Photo 1 – Your car with a visible landmark/monument behind it</li>
+                                <li>Photo 2 – The entrance/gate of the parking area</li>
+                                <li>Photo 3+ – Any signboard, building name, or floor number (optional)</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    {/* Image grid */}
+                    {imagePreviews.length > 0 && (
+                        <div className="grid grid-cols-3 gap-2">
+                            {imagePreviews.map((src, idx) => (
+                                <div key={idx} className="relative aspect-square rounded-xl overflow-hidden border border-white/10 group">
+                                    <img
+                                        src={src}
+                                        alt={`Parking ${idx + 1}`}
+                                        className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                                    />
+                                    {/* Dark overlay */}
+                                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200" />
+                                    {/* Remove button */}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleParkingImageRemove(idx)}
+                                        className="absolute top-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-red-600 hover:bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center shadow-lg"
+                                        title="Remove photo"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                    {/* Badge: required badge for first two */}
+                                    {idx < MIN_IMAGES && (
+                                        <span className="absolute bottom-1.5 left-1.5 bg-brand-blue/90 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
+                                            #{idx + 1} Required
+                                        </span>
+                                    )}
+                                </div>
+                            ))}
+
+                            {/* Add more slot */}
+                            {imageCount < MAX_IMAGES && (
+                                <button
+                                    type="button"
+                                    onClick={() => parkingFileRef.current?.click()}
+                                    className="aspect-square rounded-xl border-2 border-dashed border-white/20 hover:border-brand-blue/60 hover:bg-brand-blue/5 transition-all flex flex-col items-center justify-center gap-1.5 text-zinc-500 hover:text-brand-blue"
+                                >
+                                    <ImagePlus className="w-6 h-6" />
+                                    <span className="text-[10px] font-medium">Add Photo</span>
+                                </button>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Upload button (shown when no images yet) */}
+                    {imagePreviews.length === 0 && (
+                        <button
+                            type="button"
+                            onClick={() => parkingFileRef.current?.click()}
+                            className="w-full border-2 border-dashed border-white/20 hover:border-brand-blue/60 hover:bg-brand-blue/5 transition-all rounded-xl py-8 flex flex-col items-center gap-3 text-zinc-500 hover:text-brand-blue"
+                        >
+                            <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center">
+                                <Camera className="w-7 h-7" />
+                            </div>
+                            <div className="text-center">
+                                <p className="font-semibold text-sm">Upload Parking Photos</p>
+                                <p className="text-xs text-zinc-600 mt-0.5">Tap to select images from your gallery</p>
+                            </div>
+                            <span className="text-xs bg-brand-blue/10 text-brand-blue px-3 py-1 rounded-full font-medium">
+                                At least {MIN_IMAGES} photos required
+                            </span>
+                        </button>
+                    )}
+
+                    {/* Hidden file input */}
+                    <input
+                        ref={parkingFileRef}
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        className="hidden"
+                        onChange={handleParkingImageAdd}
+                    />
+
+                    {/* Requirement status */}
+                    {needsMore && imageCount > 0 && (
+                        <p className="text-xs text-amber-400 flex items-center gap-1.5">
+                            <AlertCircle className="w-3.5 h-3.5" />
+                            {MIN_IMAGES - imageCount} more photo{MIN_IMAGES - imageCount > 1 ? "s" : ""} needed to continue
+                        </p>
+                    )}
+                    {!needsMore && (
+                        <p className="text-xs text-green-400 flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            Parking photos added — you're good to go!
+                        </p>
+                    )}
+                </div>
+
+                {/* ── Map Pin ─────────────────────────────────────────────────── */}
                 <div className="space-y-4 mt-8">
                     <label className="text-sm font-semibold text-white flex items-center justify-between">
                         <span className="flex items-center gap-2">

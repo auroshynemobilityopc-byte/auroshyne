@@ -4,6 +4,7 @@ const User = require('../users/user.model');
 const { AppError } = require('../../common/utils/appError');
 const { CUSTOMER } = require('../../common/constants/roles');
 const { generateRefreshToken, generateAccessToken } = require('../../common/utils/token.utils');
+const mailService = require('../mail/mail.service');
 
 const generateToken = (user) => {
     return jwt.sign(
@@ -53,6 +54,9 @@ exports.register = async (payload) => {
     });
 
     const token = generateToken(user);
+
+    // Fire auto-email (non-blocking)
+    mailService.sendAutoEmail('newRegistration', { userId: user._id });
 
     return {
         token,

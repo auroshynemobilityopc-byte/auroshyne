@@ -11,6 +11,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useCustomerAuth();
   const { data: settingsData } = useSettings();
   const whatsappNumber = settingsData?.data?.whatsappNumber || "919346748605";
+  const showWhatsapp = settingsData?.data?.showWhatsapp !== false;
 
   const navItems = [
     { icon: Home, label: "Home", path: "/" },
@@ -110,7 +111,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       </main>
 
       {/* ================= WHATSAPP BUTTON ================= */}
-      {location.pathname === '/' && (
+      {showWhatsapp && location.pathname === '/' && (
         <a
           href={`https://wa.me/${whatsappNumber}`}
           target="_blank"

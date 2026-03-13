@@ -14,6 +14,7 @@ exports.updateSettingDTO = Joi.object({
     }),
     videoLink: Joi.string().allow(''),
     whatsappNumber: Joi.string().allow(''),
+    showWhatsapp: Joi.boolean(),
     isBookingClosed: Joi.boolean(),
     bookingClosedMessage: Joi.string().allow(''),
     galleryImages: Joi.array().items(Joi.string().allow('')),
@@ -36,6 +37,20 @@ exports.updateSettingDTO = Joi.object({
         }),
         resend: Joi.object({
             apiKey: Joi.string().allow('')
+        })
+    }),
+    autoEmails: Joi.object({
+        newBooking: Joi.object({
+            enabled: Joi.boolean(),
+            templateId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).allow('', null)
+        }),
+        newRegistration: Joi.object({
+            enabled: Joi.boolean(),
+            templateId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).allow('', null)
+        }),
+        bookingCompleted: Joi.object({
+            enabled: Joi.boolean(),
+            templateId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).allow('', null)
         })
     })
 });

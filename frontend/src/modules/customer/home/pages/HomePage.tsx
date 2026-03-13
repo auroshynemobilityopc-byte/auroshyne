@@ -16,6 +16,7 @@ export default function HomePage() {
     const ALL_SERVICES = servicesResult?.data || [];
     const videoLink = settingsData?.data?.videoLink;
     const whatsappNumber = settingsData?.data?.whatsappNumber || "919346748605";
+    const showWhatsapp = settingsData?.data?.showWhatsapp !== false;
     const galleryImages = settingsData?.data?.galleryImages || [];
 
     // Deduplicate by name and find the starting price
@@ -325,6 +326,7 @@ export default function HomePage() {
             </section>
 
             {/* ================= WHATSAPP FLOATING BUTTON ================= */}
+            {showWhatsapp && (
             <a
                 href={`https://wa.me/${whatsappNumber}?text=Hi%2C%20I%27d%20like%20to%20book%20a%20car%20wash%20service!`}
                 target="_blank"
@@ -352,6 +354,7 @@ export default function HomePage() {
                     Chat with us
                 </span>
             </a>
+            )}
         </div>
     );
 }

@@ -34,6 +34,7 @@ export interface BookingState {
     isBulkBooking: boolean;
     discountCode: string | null;
     discountValue: number;
+    parkingImages: File[];
 }
 
 export interface StepProps {

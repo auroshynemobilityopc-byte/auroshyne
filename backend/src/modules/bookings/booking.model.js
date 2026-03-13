@@ -13,6 +13,7 @@ const vehicleSchema = new mongoose.Schema(
         },
         addons: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Addon' }],
         price: { type: Number, required: true },
+        imageUrl: { type: String },
     },
     { _id: false }
 );
@@ -45,7 +46,8 @@ const bookingSchema = new mongoose.Schema(
             mapLocation: {
                 lat: { type: Number },
                 lng: { type: Number }
-            }
+            },
+            parkingImageUrls: [String]
         },
 
         vehicles: [vehicleSchema],

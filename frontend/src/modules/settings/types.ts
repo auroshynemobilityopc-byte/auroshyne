@@ -4,6 +4,17 @@ export interface HomeService {
     description: string;
 }
 
+export interface AutoEmailTrigger {
+    enabled: boolean;
+    templateId: string | null;
+}
+
+export interface AutoEmails {
+    newBooking:        AutoEmailTrigger;
+    newRegistration:   AutoEmailTrigger;
+    bookingCompleted:  AutoEmailTrigger;
+}
+
 export interface Setting {
     _id?: string;
     slotsCount: {
@@ -19,6 +30,7 @@ export interface Setting {
     };
     videoLink: string;
     whatsappNumber?: string;
+    showWhatsapp?: boolean;
     isBookingClosed: boolean;
     bookingClosedMessage: string;
     galleryImages?: string[];
@@ -37,6 +49,7 @@ export interface Setting {
             apiKey: string;
         };
     };
+    autoEmails?: AutoEmails;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -60,6 +73,7 @@ export interface UpdateSettingPayload {
     };
     videoLink?: string;
     whatsappNumber?: string;
+    showWhatsapp?: boolean;
     isBookingClosed?: boolean;
     bookingClosedMessage?: string;
     galleryImages?: string[];
@@ -77,5 +91,10 @@ export interface UpdateSettingPayload {
         resend?: {
             apiKey: string;
         };
+    };
+    autoEmails?: {
+        newBooking?:       { enabled?: boolean; templateId?: string | null };
+        newRegistration?:  { enabled?: boolean; templateId?: string | null };
+        bookingCompleted?: { enabled?: boolean; templateId?: string | null };
     };
 }

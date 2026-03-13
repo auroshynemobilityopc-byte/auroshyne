@@ -15,6 +15,7 @@ const settingSchema = new mongoose.Schema(
         },
         videoLink: { type: String, default: '' },
         whatsappNumber: { type: String, default: '' },
+        showWhatsapp: { type: Boolean, default: true },
         isBookingClosed: { type: Boolean, default: false },
         bookingClosedMessage: { type: String, default: 'Temporary bookings are closed and will be continued soon.' },
         galleryImages: [{ type: String }],
@@ -37,6 +38,20 @@ const settingSchema = new mongoose.Schema(
             },
             resend: {
                 apiKey: { type: String, default: '' }
+            }
+        },
+        autoEmails: {
+            newBooking: {
+                enabled:    { type: Boolean, default: false },
+                templateId: { type: mongoose.Schema.Types.ObjectId, ref: 'EmailTemplate', default: null }
+            },
+            newRegistration: {
+                enabled:    { type: Boolean, default: false },
+                templateId: { type: mongoose.Schema.Types.ObjectId, ref: 'EmailTemplate', default: null }
+            },
+            bookingCompleted: {
+                enabled:    { type: Boolean, default: false },
+                templateId: { type: mongoose.Schema.Types.ObjectId, ref: 'EmailTemplate', default: null }
             }
         }
     },

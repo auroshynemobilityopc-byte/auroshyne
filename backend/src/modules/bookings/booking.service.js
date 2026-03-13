@@ -8,6 +8,7 @@ const slotConfig = require('../../config/slot.config');
 const { AppError } = require('../../common/utils/appError');
 const notificationService = require('../notifications/notification.service');
 const discountService = require('../discounts/discount.service');
+const mailService = require('../mail/mail.service');
 
 /* ---------------- HELPERS ---------------- */
 
@@ -186,6 +187,9 @@ exports.createBooking = async (payload, userId) => {
         await session.commitTransaction();
         session.endSession();
 
+        // Fire auto-email (non-blocking)
+        mailService.sendAutoEmail('newBooking', { userId, bookingId: booking[0]._id });
+
         return booking[0];
     } catch (err) {
         await session.abortTransaction();
@@ -352,6 +356,11 @@ exports.updateBookingStatus = async ({ bookingId, status }) => {
 
     booking.status = status;
     await booking.save();
+
+    // Fire auto-email for completion (non-blocking)
+    if (status === 'COMPLETED') {
+        mailService.sendAutoEmail('bookingCompleted', { userId: booking.userId, bookingId: booking._id });
+    }
 
     return booking;
 };

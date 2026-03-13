@@ -7,6 +7,7 @@ const vehicleDTO = Joi.object({
     cc: Joi.string().allow(''),
     serviceId: Joi.string().required(),
     addons: Joi.array().items(Joi.string()),
+    imageUrl: Joi.string().uri().allow('', null).optional(),
 });
 
 exports.createBookingDTO = Joi.object({
@@ -18,7 +19,8 @@ exports.createBookingDTO = Joi.object({
         mapLocation: Joi.object({
             lat: Joi.number().required(),
             lng: Joi.number().required()
-        }).optional()
+        }).optional(),
+        parkingImageUrls: Joi.array().items(Joi.string().uri()).optional()
     }).required(),
 
     category: Joi.string().valid('private', 'commercial').allow('', null),

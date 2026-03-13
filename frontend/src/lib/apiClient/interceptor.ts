@@ -62,7 +62,9 @@ api.interceptors.response.use(
                     clearAccessToken();
                     localStorage.removeItem("refreshToken");
                     localStorage.removeItem("user");
-                    window.location.href = "/admin/login";
+                    
+                    const isAdmin = window.location.pathname.startsWith("/admin");
+                    window.location.href = isAdmin ? "/admin/login" : "/login";
                     return;
                 }
 
@@ -82,7 +84,8 @@ api.interceptors.response.use(
                 localStorage.removeItem("refreshToken");
                 localStorage.removeItem("user");
 
-                window.location.href = "/admin/login";
+                const isAdmin = window.location.pathname.startsWith("/admin");
+                window.location.href = isAdmin ? "/admin/login" : "/login";
                 return Promise.reject(err);
             } finally {
                 isRefreshing = false;

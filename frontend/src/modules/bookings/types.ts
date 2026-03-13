@@ -58,10 +58,13 @@ export interface BookingDetails {
             lat: number;
             lng: number;
         };
+        parkingImageUrls?: string[];
     };
     vehicles: {
         number: string;
         type: string;
+        model?: string;
+        cc?: string;
         serviceId: {
             name: string;
             price: number;
@@ -71,6 +74,7 @@ export interface BookingDetails {
             price: number;
         }[];
         price: number;
+        imageUrl?: string;
     }[];
     discount: number;
     totalAmount: number;

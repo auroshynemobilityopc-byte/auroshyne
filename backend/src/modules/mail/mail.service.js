@@ -137,3 +137,31 @@ exports.sendSupportMail = async ({ fromEmail, fromName, subject, message }) => {
         content: supportContent
     });
 };
+
+/**
+ * sendAutoEmail – fire-and-forget helper called from business services.
+ *
+ * @param {string} trigger  - 'newBooking' | 'newRegistration' | 'bookingCompleted'
+ * @param {object} ctx      - { userId?, bookingId? }
+ */
+exports.sendAutoEmail = async (trigger, ctx = {}) => {
+    try {
+        const setting = await Setting.findOne().lean();
+        if (!setting) return;
+
+        // If email provider is disabled globally, skip
+        if (!setting.emailSettings || setting.emailSettings.provider === 'disabled') return;
+
+        const triggerCfg = setting.autoEmails?.[trigger];
+        if (!triggerCfg || !triggerCfg.enabled || !triggerCfg.templateId) return;
+
+        await exports.sendParsedMail({
+            templateId: String(triggerCfg.templateId),
+            userId:     ctx.userId     ? String(ctx.userId)    : undefined,
+            bookingId:  ctx.bookingId  ? String(ctx.bookingId) : undefined,
+        });
+    } catch (err) {
+        // Never crash the caller — just log
+        console.error(`[AutoEmail] Failed to send "${trigger}" email:`, err.message);
+    }
+};

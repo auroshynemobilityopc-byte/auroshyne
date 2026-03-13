@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Copy, MapPin, Mail } from "lucide-react";
+import { Copy, MapPin, Mail, Car, Bike } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { MapContainer, TileLayer, Marker } from "react-leaflet";
@@ -195,6 +195,32 @@ export const BookingDetailsPage = () => {
                         </div>
                     );
                 })()}
+
+                {(booking.customer.parkingImageUrls?.length ?? 0) > 0 && (
+                    <div className="mt-4 space-y-2">
+                        <h3 className="text-xs font-semibold text-zinc-400 flex items-center gap-1.5 uppercase tracking-wider">
+                            📸 Parking Area Photos
+                        </h3>
+                        <div className="grid grid-cols-2 gap-2">
+                            {booking.customer.parkingImageUrls?.map((url: string, idx: number) => (
+                                <div 
+                                    key={idx} 
+                                    className="group relative aspect-video rounded-xl overflow-hidden border border-zinc-800 bg-zinc-950 cursor-zoom-in"
+                                    onClick={() => window.open(url, '_blank')}
+                                >
+                                    <img 
+                                        src={url} 
+                                        alt={`Parking ${idx + 1}`} 
+                                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+                                    />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                        <span className="text-white text-xs font-medium bg-black/50 px-2 py-1 rounded-full backdrop-blur-sm">View Full</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* 🧾 BILL / PRICE BREAKDOWN */}
@@ -203,27 +229,63 @@ export const BookingDetailsPage = () => {
                     Price Details
                 </h2>
 
-                <div className="flex flex-col gap-2 text-sm">
-                    {booking.vehicles.map((v) => (
-                        <div key={v.number} className="flex flex-col gap-1">
-                            <div className="flex justify-between text-zinc-300">
-                                <span>
-                                    {v.number} • {v.serviceId.name}
-                                </span>
-                                <span>₹{v.serviceId.price}</span>
-                            </div>
+                <div className="flex flex-col gap-3 text-sm">
+                    {booking.vehicles.map((v) => {
+                        const isTwoWheeler = v.type === "2W";
+                        const VehicleIcon = isTwoWheeler ? Bike : Car;
 
-                            {v.addons.map((addon, idx) => (
-                                <div
-                                    key={idx}
-                                    className="flex justify-between text-zinc-500 text-xs ml-2"
-                                >
-                                    <span>+ {addon.name}</span>
-                                    <span>₹{addon.price}</span>
+                        return (
+                            <div key={v.number} className="flex flex-col gap-2 bg-white/[0.02] p-3 rounded-xl border border-white/5">
+                                <div className="flex gap-4">
+                                    {v.imageUrl && (
+                                        <div 
+                                            className="w-16 h-16 rounded-lg overflow-hidden border border-zinc-700 bg-black cursor-zoom-in group relative shrink-0 shadow-lg"
+                                            onClick={() => window.open(v.imageUrl, '_blank')}
+                                        >
+                                            <img src={v.imageUrl} alt="Vehicle" className="w-full h-full object-cover transition-transform group-hover:scale-110" />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                <span className="text-[10px] text-white font-bold px-1.5 py-0.5 bg-black/60 rounded">VIEW</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                    <div className="flex-1">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <div className="flex items-center gap-2 font-bold text-white">
+                                                    <VehicleIcon className="w-4 h-4 text-brand-blue" />
+                                                    <span>{v.number}</span>
+                                                    <span className="text-[10px] bg-zinc-800 text-zinc-400 px-1.5 py-0.5 rounded uppercase">{v.type}</span>
+                                                </div>
+                                                <p className="text-xs text-zinc-300 font-medium mt-1">
+                                                    {v.serviceId.name}
+                                                </p>
+                                                <p className="text-[10px] text-zinc-500 mt-0.5 uppercase tracking-wider">
+                                                    {v.model && `Model: ${v.model}`} {v.cc && ` • ${v.cc}CC`}
+                                                </p>
+                                            </div>
+                                            <div className="text-right">
+                                                <span className="font-bold text-white">₹{v.serviceId.price}</span>
+                                            </div>
+                                        </div>
+
+                                        {v.addons.length > 0 && (
+                                            <div className="mt-2 pt-2 border-t border-white/5 space-y-1">
+                                                {v.addons.map((addon, idx) => (
+                                                    <div
+                                                        key={idx}
+                                                        className="flex justify-between text-zinc-500 text-[11px]"
+                                                    >
+                                                        <span>+ {addon.name}</span>
+                                                        <span>₹{addon.price}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
-                            ))}
-                        </div>
-                    ))}
+                            </div>
+                        );
+                    })}
 
                     <div className="border-t border-zinc-800 my-2" />
 

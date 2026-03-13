@@ -7,6 +7,7 @@ import { format } from "date-fns";
 import { useCreateBooking, useServices, useAddons, useCreateCashfreeOrder, useVerifyCashfreePayment, useDeleteFailedBooking, useCheckSlotAvailability } from "../hooks";
 import { useCustomerAuth } from "../../../../app/customer/CustomerAuthContext";
 import { useSettings } from "../../../settings/hooks";
+import { uploadGalleryImageApi } from "../../../settings/api";
 // @ts-ignore
 import { load } from "@cashfreepayments/cashfree-js";
 
@@ -58,6 +59,7 @@ export default function BookingPage() {
         isBulkBooking: false,
         discountCode: null,
         discountValue: 0,
+        parkingImages: [],
     };
 
     const getSavedState = () => {
@@ -80,7 +82,13 @@ export default function BookingPage() {
     } : defaultBookingState);
 
     useEffect(() => {
-        localStorage.setItem('bookingState', JSON.stringify({ step, booking }));
+        // Sanitize booking state before saving to localStorage (remove non-serializable File objects)
+        const sanitizedBooking = {
+            ...booking,
+            parkingImages: [], // Cannot serialize Files
+            vehicles: booking.vehicles.map(v => ({ ...v, image: null })) // Cannot serialize Files
+        };
+        localStorage.setItem('bookingState', JSON.stringify({ step, booking: sanitizedBooking }));
     }, [step, booking]);
 
     const nextStep = () => setStep((s) => Math.min(s + 1, 8) as BookingStep);
@@ -158,9 +166,12 @@ export default function BookingPage() {
             // Step 5: date+slot must be selected (availability is checked separately)
             case 5: return booking.date && booking.slotId;
             case 6:
-                // Don't disable the button completely for step 6 if just map location is missing 
-                // so we can show an alert on click. We still require house and mobile
-                return booking.address.house.length > 0 && booking.address.mobile.length >= 10;
+                // Require house, mobile, map pin, AND at least 2 parking images
+                return (
+                    booking.address.house.length > 0 &&
+                    booking.address.mobile.length >= 10 &&
+                    (booking.parkingImages?.length ?? 0) >= 2
+                );
             case 8: return booking.paymentMode;
             default: return true;
         }
@@ -307,7 +318,7 @@ export default function BookingPage() {
                             </button>
                         )}
                         <button
-                            onClick={() => {
+                            onClick={async () => {
                                 // ── Step 5: Check Availability first, then Continue ──
                                 if (step === 5) {
                                     if (slotStatus === 'available') {
@@ -316,11 +327,6 @@ export default function BookingPage() {
                                     } else {
                                         handleCheckAvailability();
                                     }
-                                    return;
-                                }
-
-                                if (step === 6 && !booking.address.mapLocation) {
-                                    toast.error("Please select a location on the map before continuing.");
                                     return;
                                 }
 
@@ -336,6 +342,46 @@ export default function BookingPage() {
                                         return;
                                     }
 
+                                    // 1. Upload parking images
+                                    let parkingImageUrls: string[] = [];
+                                    if (booking.parkingImages?.length) {
+                                        try {
+                                            const uploadResults = await Promise.all(
+                                                booking.parkingImages.map(file => uploadGalleryImageApi(file))
+                                            );
+                                            parkingImageUrls = uploadResults
+                                                .filter(r => r.success && r.url)
+                                                .map(r => r.url);
+                                        } catch {
+                                            toast.error("Failed to upload parking images. Please retry.");
+                                            return;
+                                        }
+                                    }
+
+                                    // 2. Upload vehicle images
+                                    const vehiclesWithImages = await Promise.all(
+                                        booking.vehicles.map(async (v) => {
+                                            let imageUrl = "";
+                                            if (v.image instanceof File) {
+                                                try {
+                                                    const res = await uploadGalleryImageApi(v.image);
+                                                    if (res.success) imageUrl = res.url;
+                                                } catch (err) {
+                                                    console.error("Vehicle Image upload failed", err);
+                                                }
+                                            }
+                                            return {
+                                                type: v.type === 'two-wheeler' ? '2W' : (v.type === 'cab' ? 'CAB' : '4W'),
+                                                number: v.number,
+                                                model: v.model,
+                                                cc: v.cc,
+                                                serviceId: v.serviceId,
+                                                addons: v.addonIds || [],
+                                                imageUrl: imageUrl || undefined
+                                            };
+                                        })
+                                    );
+
                                     const payload = {
                                         customer: {
                                             name: user?.name || "Customer",
@@ -343,17 +389,11 @@ export default function BookingPage() {
                                             address: `${booking.address.house}, ${booking.address.street}`,
                                             apartmentName: booking.address.house,
                                             mapLocation: booking.address.mapLocation || undefined,
+                                            parkingImageUrls,
                                         },
                                         category: booking.category,
                                         paymentMode: booking.paymentMode,
-                                        vehicles: booking.vehicles.map(v => ({
-                                            type: v.type === 'two-wheeler' ? '2W' : (v.type === 'cab' ? 'CAB' : '4W'),
-                                            number: v.number,
-                                            model: v.model,
-                                            cc: v.cc,
-                                            serviceId: v.serviceId,
-                                            addons: v.addonIds || []
-                                        })),
+                                        vehicles: vehiclesWithImages,
                                         slot: booking.slotId.toUpperCase(),
                                         date: format(booking.date, 'yyyy-MM-dd'),
                                         discountCode: booking.discountCode || undefined
