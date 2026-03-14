@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MapPin, ChevronDown, ChevronUp, CheckCircle2, Home, Briefcase, Search, Navigation, Loader2, Camera, X, ImagePlus, AlertCircle, Phone } from "lucide-react";
 import { cn } from "../../../lib/utils";
@@ -21,6 +21,19 @@ const DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
+// Premium Custom Marker Icon
+const pulseMarkerIcon = L.divIcon({
+    html: `
+        <div class="relative flex items-center justify-center">
+            <div class="absolute w-8 h-8 bg-brand-blue/40 rounded-full animate-ping"></div>
+            <div class="relative w-4 h-4 bg-brand-blue rounded-full border-2 border-white shadow-lg"></div>
+        </div>
+    `,
+    className: "custom-pulse-marker",
+    iconSize: [32, 32],
+    iconAnchor: [16, 16],
+});
+
 function LocationMarker({ position, setPosition }: { position: L.LatLng | null; setPosition: (p: L.LatLng) => void }) {
     useMapEvents({
         click(e) {
@@ -28,14 +41,26 @@ function LocationMarker({ position, setPosition }: { position: L.LatLng | null; 
         },
     });
 
-    return position === null ? null : <Marker position={position}></Marker>;
+    return position === null ? null : (
+        <Marker position={position} icon={pulseMarkerIcon}>
+        </Marker>
+    );
 }
 
-function MapUpdater({ center }: { center: L.LatLng | null }) {
+function MapUpdater({ center, zoom = 15 }: { center: L.LatLng | null; zoom?: number }) {
     const map = useMap();
-    if (center) {
-        map.flyTo(center, 15);
-    }
+    const lastPos = useRef<string>("");
+
+    useEffect(() => {
+        if (center) {
+            const posKey = `${center.lat.toFixed(4)},${center.lng.toFixed(4)}`;
+            if (lastPos.current !== posKey) {
+                map.flyTo(center, zoom);
+                lastPos.current = posKey;
+            }
+        }
+    }, [center, map, zoom]);
+
     return null;
 }
 
@@ -50,6 +75,22 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
 
     const [showSaved, setShowSaved] = useState(true);
     const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [showPhotoOptions, setShowPhotoOptions] = useState(false);
+    const cameraFileRef = useRef<HTMLInputElement>(null);
+    const [cityCoords, setCityCoords] = useState<[number, number]>([17.6868, 83.2185]);
+
+    useEffect(() => {
+        if (allowedCity && !booking.address.mapLocation) {
+            fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(allowedCity)}&limit=1`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data && data.length > 0) {
+                        setCityCoords([parseFloat(data[0].lat), parseFloat(data[0].lon)]);
+                    }
+                })
+                .catch(err => console.error("Failed to fetch city coords", err));
+        }
+    }, [allowedCity]);
 
     const applyAddress = (a: any) => {
         setSelectedId(a._id);
@@ -108,13 +149,36 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
         if (!searchQuery) return;
         setIsSearching(true);
         try {
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`);
+            // Bias search towards the allowed city
+            const query = isRestricted ? `${searchQuery}, ${allowedCity}` : searchQuery;
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`);
             const data = await res.json();
             setSearchResults(data);
         } catch (e) {
             console.error("Geocoding failed", e);
         } finally {
             setIsSearching(false);
+        }
+    };
+
+    const handleMapClick = async (p: L.LatLng) => {
+        updateBooking({ address: { ...booking.address, mapLocation: { lat: p.lat, lng: p.lng } } });
+        
+        // Reverse geocode to get the address
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${p.lat}&lon=${p.lng}`);
+            const data = await res.json();
+            if (data && data.display_name) {
+                updateBooking({ 
+                    address: { 
+                        ...booking.address, 
+                        street: data.display_name,
+                        mapLocation: { lat: p.lat, lng: p.lng }
+                    } 
+                });
+            }
+        } catch (e) {
+            console.error("Reverse geocoding failed", e);
         }
     };
 
@@ -135,16 +199,33 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
 
     const getCurrentLocation = () => {
         if ("geolocation" in navigator) {
-            navigator.geolocation.getCurrentPosition((position) => {
+            navigator.geolocation.getCurrentPosition(async (position) => {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+                
                 updateBooking({
                     address: {
                         ...booking.address,
-                        mapLocation: {
-                            lat: position.coords.latitude,
-                            lng: position.coords.longitude
-                        }
+                        mapLocation: { lat, lng }
                     }
                 });
+
+                // Reverse geocode
+                try {
+                    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+                    const data = await res.json();
+                    if (data && data.display_name) {
+                        updateBooking({
+                            address: {
+                                ...booking.address,
+                                street: data.display_name,
+                                mapLocation: { lat, lng }
+                            }
+                        });
+                    }
+                } catch (e) {
+                    console.error("Reverse geocoding failed", e);
+                }
             }, () => {
                 alert("Unable to retrieve your location. Please check your browser permissions.");
             });
@@ -164,6 +245,10 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
     const whatsappLink = settings?.whatsappNumber 
         ? `https://wa.me/${settings.whatsappNumber.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I'm trying to book a wash but my location is outside ${allowedCity}. Can you help?`)}`
         : "#";
+
+    const isValidMobile = (num: string) => /^[6-9]\d{9}$/.test(num.replace(/\s/g, ''));
+    const isMobileValid = isValidMobile(booking.address.mobile);
+    const isLocationValid = !!booking.address.mapLocation && isLocationInCity;
 
     return (
         <div className="space-y-6">
@@ -236,12 +321,136 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
                 </div>
             )}
 
-            {/* ── Manual Form ── */}
+            {/* ── Map Pin ─────────────────────────────────────────────────── */}
             <div className="space-y-4">
+                <label className="text-sm font-semibold text-white flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-brand-blue" />
+                        Pin Location on Map
+                        {booking.address.mapLocation && <CheckCircle2 className="inline w-4 h-4 text-brand-blue ml-1" />}
+                    </span>
+
+                    <button
+                        type="button"
+                        onClick={getCurrentLocation}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-blue/10 hover:bg-brand-blue/20 text-brand-blue text-xs font-semibold"
+                    >
+                        <Navigation className="w-3.5 h-3.5" />
+                        Use Current
+                    </button>
+                </label>
+
+                {/* Search Location */}
+                <div className="relative z-20">
+                    <div className="flex bg-charcoal-800 border border-white/10 rounded-xl overflow-hidden focus-within:border-brand-blue focus-within:ring-1 focus-within:ring-brand-blue/50">
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Search location manually..."
+                            className="w-full bg-transparent p-3 text-sm text-white focus:outline-none"
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    handleSearch();
+                                }
+                            }}
+                        />
+                        <button
+                            type="button"
+                            onClick={handleSearch}
+                            disabled={isSearching}
+                            className="px-4 bg-zinc-800 hover:bg-zinc-700 text-white flex items-center justify-center transition-colors"
+                        >
+                            {isSearching ? <Loader2 className="w-4 h-4 animate-spin text-zinc-400" /> : <Search className="w-4 h-4 text-zinc-400" />}
+                        </button>
+                    </div>
+
+                    {/* Search Results Dropdown */}
+                    <AnimatePresence>
+                        {searchResults.length > 0 && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -5 }}
+                                className="absolute left-0 right-0 top-full mt-2 bg-zinc-900 border border-zinc-800 rounded-xl max-h-48 overflow-y-auto shadow-xl z-50 flex flex-col"
+                            >
+                                {searchResults.map((result, idx) => (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => selectSearchResult(result)}
+                                        className="text-left p-3 hover:bg-zinc-800 text-xs text-zinc-300 border-b border-zinc-800/50 last:border-b-0 transition-colors"
+                                    >
+                                        {result.display_name}
+                                    </button>
+                                ))}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+
+                <div className="h-[250px] w-full rounded-2xl overflow-hidden border border-white/10 z-0 relative shadow-inner">
+                    <MapContainer
+                        center={booking.address.mapLocation ? [booking.address.mapLocation.lat, booking.address.mapLocation.lng] : cityCoords}
+                        zoom={13}
+                        scrollWheelZoom={true}
+                        style={{ height: "100%", width: "100%", zIndex: 0 }}
+                    >
+                        <TileLayer
+                            attribution='&copy; OpenStreetMap contributors'
+                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        />
+                        <MapUpdater
+                            center={booking.address.mapLocation 
+                                ? L.latLng(booking.address.mapLocation.lat, booking.address.mapLocation.lng) 
+                                : L.latLng(cityCoords[0], cityCoords[1])
+                            }
+                            zoom={booking.address.mapLocation ? 17 : 13}
+                        />
+                        <LocationMarker
+                            position={booking.address.mapLocation ? L.latLng(booking.address.mapLocation.lat, booking.address.mapLocation.lng) : null}
+                            setPosition={handleMapClick}
+                        />
+                    </MapContainer>
+                </div>
+                <p className="text-xs text-zinc-500 font-medium">Tap anywhere on the map to manually drop the pin.</p>
+            </div>
+
+            {showRestrictionWarning && (
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-3"
+                >
+                    <div className="flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                            <p className="text-sm font-bold text-amber-500">Location Outside Service Area</p>
+                            <p className="text-xs text-zinc-400 leading-relaxed">
+                                We currently provide services only within **{allowedCity}**. This location appears to be outside our service range.
+                            </p>
+                        </div>
+                    </div>
+                    <a
+                        href={whatsappLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] text-xs font-bold transition-all border border-[#25D366]/20"
+                    >
+                        <Phone className="w-3.5 h-3.5" />
+                        Contact us on WhatsApp
+                    </a>
+                </motion.div>
+            )}
+
+            {/* ── Manual Form ── */}
+            <div className="space-y-4 pt-4 border-t border-white/5">
                 <div className="space-y-2">
-                    <label className="text-sm text-text-grey">House / Flat / Apartment Name <span className="text-red-400">*</span></label>
+                    <label className="text-sm text-text-grey">House / Flat / Apartment / Landmark <span className="text-red-400">*</span></label>
                     <input
                         type="text"
+                        placeholder="e.g. Flat 101, Landmark Building"
                         value={booking.address.house}
                         onChange={(e) => {
                             setSelectedId(null);
@@ -250,20 +459,24 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
                         className="w-full bg-charcoal-800 border border-white/10 rounded-xl p-4 text-white focus:border-brand-blue focus:outline-none"
                     />
                 </div>
-                <div className="space-y-2">
-                    <label className="text-sm text-text-grey">Street / Landmark <span className="text-red-400">*</span></label>
+                <div className="space-y-2 opacity-80">
+                    <label className="text-sm text-text-grey flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">Street (Auto-filled from Map) <span className="text-red-400">*</span></span>
+                        {isLocationValid && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                    </label>
                     <input
                         type="text"
                         value={booking.address.street}
-                        onChange={(e) => {
-                            setSelectedId(null);
-                            updateBooking({ address: { ...booking.address, street: e.target.value } });
-                        }}
-                        className="w-full bg-charcoal-800 border border-white/10 rounded-xl p-4 text-white focus:border-brand-blue focus:outline-none"
+                        readOnly
+                        placeholder="Pin your location on the map above..."
+                        className="w-full bg-charcoal-800/50 border border-white/10 rounded-xl p-4 text-zinc-400 cursor-not-allowed focus:outline-none"
                     />
                 </div>
                 <div className="space-y-2">
-                    <label className="text-sm text-text-grey">Mobile Number <span className="text-red-400">*</span></label>
+                    <label className="text-sm text-text-grey flex items-center justify-between">
+                        <span className="flex items-center gap-1.5">Mobile Number <span className="text-red-400">*</span></span>
+                        {isMobileValid && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                    </label>
                     <input
                         type="tel"
                         value={booking.address.mobile}
@@ -363,7 +576,7 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
                             {imageCount < MAX_IMAGES && (
                                 <button
                                     type="button"
-                                    onClick={() => parkingFileRef.current?.click()}
+                                    onClick={() => setShowPhotoOptions(true)}
                                     className="aspect-square rounded-xl border-2 border-dashed border-white/20 hover:border-brand-blue/60 hover:bg-brand-blue/5 transition-all flex flex-col items-center justify-center gap-1.5 text-zinc-500 hover:text-brand-blue"
                                 >
                                     <ImagePlus className="w-6 h-6" />
@@ -377,7 +590,7 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
                     {imagePreviews.length === 0 && (
                         <button
                             type="button"
-                            onClick={() => parkingFileRef.current?.click()}
+                            onClick={() => setShowPhotoOptions(true)}
                             className="w-full border-2 border-dashed border-white/20 hover:border-brand-blue/60 hover:bg-brand-blue/5 transition-all rounded-xl py-8 flex flex-col items-center gap-3 text-zinc-500 hover:text-brand-blue"
                         >
                             <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center">
@@ -385,7 +598,7 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
                             </div>
                             <div className="text-center">
                                 <p className="font-semibold text-sm">Upload Parking Photos</p>
-                                <p className="text-xs text-zinc-600 mt-0.5">Tap to select images from your gallery</p>
+                                <p className="text-xs text-zinc-600 mt-0.5">Click a picture or choose from gallery</p>
                             </div>
                             <span className="text-xs bg-brand-blue/10 text-brand-blue px-3 py-1 rounded-full font-medium">
                                 At least {MIN_IMAGES} photos required
@@ -393,12 +606,81 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
                         </button>
                     )}
 
-                    {/* Hidden file input */}
+                    {/* Photo Options Modal */}
+                    <AnimatePresence>
+                        {showPhotoOptions && (
+                            <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+                                <motion.div
+                                    initial={{ y: "100%", opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    exit={{ y: "100%", opacity: 0 }}
+                                    className="w-full max-w-sm bg-charcoal-900 border border-white/10 rounded-t-3xl sm:rounded-3xl p-6 space-y-4"
+                                >
+                                    <div className="flex justify-between items-center">
+                                        <h3 className="text-lg font-bold text-white">Add Parking Photo</h3>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setShowPhotoOptions(false)} 
+                                            className="p-2 hover:bg-white/5 rounded-full"
+                                        >
+                                            <X className="w-5 h-5 text-zinc-400" />
+                                        </button>
+                                    </div>
+
+                                    <div className="grid grid-cols-1 gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                cameraFileRef.current?.click();
+                                                setShowPhotoOptions(false);
+                                            }}
+                                            className="flex items-center gap-4 p-4 bg-white/5 hover:bg-brand-blue/10 border border-white/10 hover:border-brand-blue/30 rounded-2xl transition-all group"
+                                        >
+                                            <div className="w-12 h-12 rounded-xl bg-brand-blue/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                <Camera className="w-6 h-6 text-brand-blue" />
+                                            </div>
+                                            <div className="text-left">
+                                                <p className="font-bold text-white text-sm">Click a picture</p>
+                                                <p className="text-[11px] text-zinc-400">Use your camera to take a photo</p>
+                                            </div>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                parkingFileRef.current?.click();
+                                                setShowPhotoOptions(false);
+                                            }}
+                                            className="flex items-center gap-4 p-4 bg-white/5 hover:bg-brand-blue/10 border border-white/10 hover:border-brand-blue/30 rounded-2xl transition-all group"
+                                        >
+                                            <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                <ImagePlus className="w-6 h-6 text-purple-400" />
+                                            </div>
+                                            <div className="text-left">
+                                                <p className="font-bold text-white text-sm">Choose from gallery</p>
+                                                <p className="text-[11px] text-zinc-400">Select photos from your device</p>
+                                            </div>
+                                        </button>
+                                    </div>
+                                </motion.div>
+                            </div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Hidden file inputs */}
                     <input
                         ref={parkingFileRef}
                         type="file"
                         accept="image/*"
                         multiple
+                        className="hidden"
+                        onChange={handleParkingImageAdd}
+                    />
+                    <input
+                        ref={cameraFileRef}
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
                         className="hidden"
                         onChange={handleParkingImageAdd}
                     />
@@ -418,126 +700,6 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
                     )}
                 </div>
 
-                {/* ── Map Pin ─────────────────────────────────────────────────── */}
-                <div className="space-y-4 mt-8">
-                    <label className="text-sm font-semibold text-white flex items-center justify-between">
-                        <span className="flex items-center gap-2">
-                            <MapPin className="w-4 h-4 text-brand-blue" />
-                            Pin Location on Map
-                            {booking.address.mapLocation && <CheckCircle2 className="inline w-4 h-4 text-brand-blue ml-1" />}
-                        </span>
-
-                        <button
-                            type="button"
-                            onClick={getCurrentLocation}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-blue/10 hover:bg-brand-blue/20 text-brand-blue text-xs font-semibold"
-                        >
-                            <Navigation className="w-3.5 h-3.5" />
-                            Use Current
-                        </button>
-                    </label>
-
-                    {/* Search Location */}
-                    <div className="relative z-10">
-                        <div className="flex bg-charcoal-800 border border-white/10 rounded-xl overflow-hidden focus-within:border-brand-blue focus-within:ring-1 focus-within:ring-brand-blue/50">
-                            <input
-                                type="text"
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                placeholder="Search location manually..."
-                                className="w-full bg-transparent p-3 text-sm text-white focus:outline-none"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter') {
-                                        e.preventDefault();
-                                        handleSearch();
-                                    }
-                                }}
-                            />
-                            <button
-                                type="button"
-                                onClick={handleSearch}
-                                disabled={isSearching}
-                                className="px-4 bg-zinc-800 hover:bg-zinc-700 text-white flex items-center justify-center transition-colors"
-                            >
-                                {isSearching ? <Loader2 className="w-4 h-4 animate-spin text-zinc-400" /> : <Search className="w-4 h-4 text-zinc-400" />}
-                            </button>
-                        </div>
-
-                        {/* Search Results Dropdown */}
-                        <AnimatePresence>
-                            {searchResults.length > 0 && (
-                                <motion.div
-                                    initial={{ opacity: 0, y: -5 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    exit={{ opacity: 0, y: -5 }}
-                                    className="absolute left-0 right-0 top-full mt-2 bg-zinc-900 border border-zinc-800 rounded-xl max-h-48 overflow-y-auto shadow-xl z-50 flex flex-col"
-                                >
-                                    {searchResults.map((result, idx) => (
-                                        <button
-                                            key={idx}
-                                            type="button"
-                                            onClick={() => selectSearchResult(result)}
-                                            className="text-left p-3 hover:bg-zinc-800 text-xs text-zinc-300 border-b border-zinc-800/50 last:border-b-0 transition-colors"
-                                        >
-                                            {result.display_name}
-                                        </button>
-                                    ))}
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </div>
-
-                    <div className="h-[250px] w-full rounded-2xl overflow-hidden border border-white/10 z-0 relative shadow-inner">
-                        <MapContainer
-                            center={booking.address.mapLocation ? [booking.address.mapLocation.lat, booking.address.mapLocation.lng] : [17.6868, 83.2185]}
-                            zoom={13}
-                            scrollWheelZoom={true}
-                            style={{ height: "100%", width: "100%", zIndex: 0 }}
-                        >
-                            <TileLayer
-                                attribution='&copy; OpenStreetMap contributors'
-                                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                            />
-                            <MapUpdater
-                                center={booking.address.mapLocation ? L.latLng(booking.address.mapLocation.lat, booking.address.mapLocation.lng) : null}
-                            />
-                            <LocationMarker
-                                position={booking.address.mapLocation ? L.latLng(booking.address.mapLocation.lat, booking.address.mapLocation.lng) : null}
-                                setPosition={(p) => {
-                                    updateBooking({ address: { ...booking.address, mapLocation: { lat: p.lat, lng: p.lng } } });
-                                }}
-                            />
-                        </MapContainer>
-                    </div>
-                    <p className="text-xs text-zinc-500 font-medium">Tap anywhere on the map to manually drop the pin.</p>
-                </div>
-
-                {showRestrictionWarning && (
-                    <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-3"
-                    >
-                        <div className="flex items-start gap-3">
-                            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                            <div className="space-y-1">
-                                <p className="text-sm font-bold text-amber-500">Location Outside Service Area</p>
-                                <p className="text-xs text-zinc-400 leading-relaxed">
-                                    We currently provide services only within **{allowedCity}**. This location appears to be outside our service range.
-                                </p>
-                            </div>
-                        </div>
-                        <a
-                            href={whatsappLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] text-xs font-bold transition-all border border-[#25D366]/20"
-                        >
-                            <Phone className="w-3.5 h-3.5" />
-                            Contact us on WhatsApp
-                        </a>
-                    </motion.div>
-                )}
             </div>
         </div>
     );
