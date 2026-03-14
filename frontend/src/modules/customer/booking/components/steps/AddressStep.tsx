@@ -1,9 +1,10 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { MapPin, ChevronDown, ChevronUp, CheckCircle2, Home, Briefcase, Search, Navigation, Loader2, Camera, X, ImagePlus, AlertCircle } from "lucide-react";
+import { MapPin, ChevronDown, ChevronUp, CheckCircle2, Home, Briefcase, Search, Navigation, Loader2, Camera, X, ImagePlus, AlertCircle, Phone } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import type { StepProps } from "../../types";
 import { useSavedData } from "../../../profile/hooks";
+import { useSettings } from "../../../../settings/hooks";
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -40,6 +41,11 @@ function MapUpdater({ center }: { center: L.LatLng | null }) {
 
 export default function AddressStep({ booking, updateBooking }: StepProps) {
     const { data: savedResult } = useSavedData();
+    const { data: settingsResult } = useSettings();
+    const settings = settingsResult?.data;
+    const isRestricted = settings?.restrictToCity;
+    const allowedCity = settings?.allowedCity || "Visakhapatnam";
+
     const savedAddresses: any[] = savedResult?.data?.savedAddresses ?? [];
 
     const [showSaved, setShowSaved] = useState(true);
@@ -151,6 +157,13 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
     const MAX_IMAGES = 6;
     const imageCount = parkingImages.length;
     const needsMore = imageCount < MIN_IMAGES;
+
+    const isLocationInCity = !isRestricted || (booking.address.street || "").toLowerCase().includes(allowedCity.toLowerCase());
+    const showRestrictionWarning = isRestricted && booking.address.street && !isLocationInCity;
+
+    const whatsappLink = settings?.whatsappNumber 
+        ? `https://wa.me/${settings.whatsappNumber.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I'm trying to book a wash but my location is outside ${allowedCity}. Can you help?`)}`
+        : "#";
 
     return (
         <div className="space-y-6">
@@ -476,7 +489,7 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
 
                     <div className="h-[250px] w-full rounded-2xl overflow-hidden border border-white/10 z-0 relative shadow-inner">
                         <MapContainer
-                            center={booking.address.mapLocation ? [booking.address.mapLocation.lat, booking.address.mapLocation.lng] : [17.3850, 78.4867]}
+                            center={booking.address.mapLocation ? [booking.address.mapLocation.lat, booking.address.mapLocation.lng] : [17.6868, 83.2185]}
                             zoom={13}
                             scrollWheelZoom={true}
                             style={{ height: "100%", width: "100%", zIndex: 0 }}
@@ -498,6 +511,33 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
                     </div>
                     <p className="text-xs text-zinc-500 font-medium">Tap anywhere on the map to manually drop the pin.</p>
                 </div>
+
+                {showRestrictionWarning && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 space-y-3"
+                    >
+                        <div className="flex items-start gap-3">
+                            <AlertCircle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                            <div className="space-y-1">
+                                <p className="text-sm font-bold text-amber-500">Location Outside Service Area</p>
+                                <p className="text-xs text-zinc-400 leading-relaxed">
+                                    We currently provide services only within **{allowedCity}**. This location appears to be outside our service range.
+                                </p>
+                            </div>
+                        </div>
+                        <a
+                            href={whatsappLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl bg-[#25D366]/10 hover:bg-[#25D366]/20 text-[#25D366] text-xs font-bold transition-all border border-[#25D366]/20"
+                        >
+                            <Phone className="w-3.5 h-3.5" />
+                            Contact us on WhatsApp
+                        </a>
+                    </motion.div>
+                )}
             </div>
         </div>
     );

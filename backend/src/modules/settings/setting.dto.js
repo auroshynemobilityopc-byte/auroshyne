@@ -17,6 +17,8 @@ exports.updateSettingDTO = Joi.object({
     showWhatsapp: Joi.boolean(),
     isBookingClosed: Joi.boolean(),
     bookingClosedMessage: Joi.string().allow(''),
+    restrictToCity: Joi.boolean(),
+    allowedCity: Joi.string().allow(''),
     galleryImages: Joi.array().items(Joi.string().allow('')),
     homeServices: Joi.array().items(
         Joi.object({

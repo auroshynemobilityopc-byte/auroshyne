@@ -18,6 +18,8 @@ const settingSchema = new mongoose.Schema(
         showWhatsapp: { type: Boolean, default: true },
         isBookingClosed: { type: Boolean, default: false },
         bookingClosedMessage: { type: String, default: 'Temporary bookings are closed and will be continued soon.' },
+        restrictToCity: { type: Boolean, default: false },
+        allowedCity: { type: String, default: 'Visakhapatnam' },
         galleryImages: [{ type: String }],
         homeServices: [
             {

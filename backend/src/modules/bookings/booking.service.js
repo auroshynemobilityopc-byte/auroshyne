@@ -111,6 +111,17 @@ const calculateDiscount = (totalAmount, vehicleCount, setting) => {
     return discount;
 };
 
+const validateLocation = async (payload, session) => {
+    const setting = await Setting.findOne().session(session).lean();
+    if (setting?.restrictToCity) {
+        const allowedCity = setting.allowedCity || 'Visakhapatnam';
+        const address = payload.customer.address || '';
+        if (!address.toLowerCase().includes(allowedCity.toLowerCase())) {
+            throw new AppError(`We currently only provide services in ${allowedCity}.`, 400);
+        }
+    }
+};
+
 /* ---------------- CREATE BOOKING ---------------- */
 
 exports.createBooking = async (payload, userId) => {
@@ -121,6 +132,7 @@ exports.createBooking = async (payload, userId) => {
         const setting = await Setting.findOne().session(session).lean();
         const taxPercentage = setting?.taxPercentage || 0;
 
+        await validateLocation(payload, session);
         await checkDuplicateVehicle(payload.vehicles, payload.date, payload.slot, session);
         await checkSlotCapacityTx(payload.date, payload.slot, payload.vehicles.length, session);
 
@@ -209,6 +221,7 @@ exports.bulkBooking = async (payload, userId) => {
         const taxPercentage = setting?.taxPercentage || 0;
 
         for (const b of payload.bookings) {
+            await validateLocation(b, session);
             await checkDuplicateVehicle(b.vehicles, b.date, b.slot, session);
             await checkSlotCapacityTx(b.date, b.slot, b.vehicles.length, session);
         }

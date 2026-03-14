@@ -132,6 +132,9 @@ export default function BookingPage() {
         bulkDiscount = totalEstimate * (threeOrMoreVehiclesDiscount / 100);
     }
 
+    const isLocationInCity = !settings?.restrictToCity || 
+        (booking.address.street || "").toLowerCase().includes((settings?.allowedCity || "Visakhapatnam").toLowerCase());
+
     const stepProps = {
         booking,
         updateBooking,
@@ -170,7 +173,8 @@ export default function BookingPage() {
                 return (
                     booking.address.house.length > 0 &&
                     booking.address.mobile.length >= 10 &&
-                    (booking.parkingImages?.length ?? 0) >= 2
+                    (booking.parkingImages?.length ?? 0) >= 2 &&
+                    isLocationInCity
                 );
             case 8: return booking.paymentMode;
             default: return true;

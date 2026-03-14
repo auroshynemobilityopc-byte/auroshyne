@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Drawer } from "../../../components/shared/Drawer";
 import { Button } from "../../../components/shared/Button";
 import { useCreateBooking } from "../hooks";
+import { useSettings } from "../../settings/hooks";
 import { useServices } from "../../services/hooks";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -36,6 +37,11 @@ interface AddBookingSheetProps {
 export const AddBookingSheet = ({ open, onClose, onSuccess }: AddBookingSheetProps) => {
     const createMutation = useCreateBooking();
     const { data: servicesData } = useServices();
+    const { data: settingsResult } = useSettings();
+    const settings = settingsResult?.data;
+    const isRestricted = settings?.restrictToCity;
+    const allowedCity = settings?.allowedCity || "Visakhapatnam";
+
     const services = servicesData?.data || [];
 
     // Simple state holding the booking form data
@@ -115,6 +121,9 @@ export const AddBookingSheet = ({ open, onClose, onSuccess }: AddBookingSheetPro
         });
     };
 
+    const isLocationInCity = !isRestricted || (formData.customerAddress || "").toLowerCase().includes(allowedCity.toLowerCase());
+    const showRestrictionWarning = isRestricted && formData.customerAddress && !isLocationInCity;
+
     return (
         <Drawer open={open} onClose={onClose}>
             <div className="flex flex-col h-full max-h-[85vh]">
@@ -171,6 +180,14 @@ export const AddBookingSheet = ({ open, onClose, onSuccess }: AddBookingSheetPro
                             </div>
                             <p className="text-xs text-zinc-500">Click anywhere on the map to drop a pin.</p>
                         </div>
+                        {showRestrictionWarning && (
+                            <div className="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                                <p className="text-xs text-amber-500 font-bold">Location Outside Service Area</p>
+                                <p className="text-[10px] text-zinc-400 mt-1">
+                                    Customer's address appears to be outside **{allowedCity}**. Proceed with caution.
+                                </p>
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-3">
@@ -281,7 +298,7 @@ export const AddBookingSheet = ({ open, onClose, onSuccess }: AddBookingSheetPro
                                         className="w-full bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 text-white text-sm col-span-2"
                                     >
                                         <option value="" disabled>Select a Service</option>
-                                        {services.map(s => (
+                                        {services.map((s: any) => (
                                             <option key={s._id} value={s._id}>{s.name} ({s.vehicleType})</option>
                                         ))}
                                     </select>

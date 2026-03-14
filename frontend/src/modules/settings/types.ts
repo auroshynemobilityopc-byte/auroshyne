@@ -33,6 +33,8 @@ export interface Setting {
     showWhatsapp?: boolean;
     isBookingClosed: boolean;
     bookingClosedMessage: string;
+    restrictToCity?: boolean;
+    allowedCity?: string;
     galleryImages?: string[];
     homeServices?: HomeService[];
     emailSettings?: {
@@ -76,6 +78,8 @@ export interface UpdateSettingPayload {
     showWhatsapp?: boolean;
     isBookingClosed?: boolean;
     bookingClosedMessage?: string;
+    restrictToCity?: boolean;
+    allowedCity?: string;
     galleryImages?: string[];
     homeServices?: { serviceId: string; image: string; description: string; }[];
     emailSettings?: {

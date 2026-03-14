@@ -28,11 +28,11 @@ import { Skeleton } from "../../../components/shared/Skeleton";
 
 // ─── Tab definitions ──────────────────────────────────────────────────────────
 const TABS = [
-    { id: "booking",  label: "Booking",   Icon: CalendarClock },
-    { id: "pricing",  label: "Pricing",   Icon: BadgePercent  },
-    { id: "homepage", label: "Home Page", Icon: Home          },
-    { id: "contact",  label: "Contact",   Icon: Phone         },
-    { id: "email",    label: "Email",     Icon: Mail          },
+    { id: "booking", label: "Booking", Icon: CalendarClock },
+    { id: "pricing", label: "Pricing", Icon: BadgePercent },
+    { id: "homepage", label: "Home Page", Icon: Home },
+    { id: "contact", label: "Contact", Icon: Phone },
+    { id: "email", label: "Email", Icon: Mail },
 ] as const;
 
 type TabId = typeof TABS[number]["id"];
@@ -63,6 +63,8 @@ export const SettingsPage: React.FC = () => {
         showWhatsapp: true,
         isBookingClosed: false,
         bookingClosedMessage: "Temporary bookings are closed and will be continued soon.",
+        restrictToCity: false,
+        allowedCity: "Visakhapatnam",
         galleryImages: [],
         homeServices: [
             { serviceId: "", image: "", description: "" },
@@ -111,6 +113,8 @@ export const SettingsPage: React.FC = () => {
                 bookingClosedMessage:
                     settingsData.data.bookingClosedMessage ||
                     "Temporary bookings are closed and will be continued soon.",
+                restrictToCity: settingsData.data.restrictToCity || false,
+                allowedCity: settingsData.data.allowedCity || "Visakhapatnam",
                 galleryImages: settingsData.data.galleryImages || [],
                 homeServices: paddedHs,
                 emailSettings: {
@@ -153,7 +157,7 @@ export const SettingsPage: React.FC = () => {
             setFormData((prev) => ({
                 ...prev,
                 [name]:
-                    name === "videoLink" || name === "whatsappNumber" || name === "bookingClosedMessage"
+                    name === "videoLink" || name === "whatsappNumber" || name === "bookingClosedMessage" || name === "allowedCity"
                         ? value
                         : Number(value),
             }));
@@ -389,6 +393,39 @@ export const SettingsPage: React.FC = () => {
                                     required
                                 />
                             </FormField>
+                        </div>
+                    </Card>
+                    <Card className="p-6">
+                        <h2 className="text-lg font-semibold text-white mb-4">Location Restrictions</h2>
+                        <div className="flex flex-col gap-4">
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input
+                                    type="checkbox"
+                                    name="restrictToCity"
+                                    checked={formData.restrictToCity}
+                                    onChange={handleChange}
+                                    className="w-5 h-5 rounded border-white/20 bg-zinc-900 text-brand-blue focus:ring-brand-blue"
+                                />
+                                <div>
+                                    <span className="text-white font-medium block">Restrict Bookings to Specific City</span>
+                                    <span className="text-xs text-zinc-400">
+                                        Only allow bookings within the specified city/region.
+                                    </span>
+                                </div>
+                            </label>
+
+                            {formData.restrictToCity && (
+                                <FormField label="Allowed City Name">
+                                    <Input
+                                        type="text"
+                                        name="allowedCity"
+                                        value={formData.allowedCity}
+                                        onChange={handleChange}
+                                        placeholder="e.g. Visakhapatnam"
+                                        required
+                                    />
+                                </FormField>
+                            )}
                         </div>
                     </Card>
 
@@ -885,14 +922,12 @@ export const SettingsPage: React.FC = () => {
                                                 <button
                                                     type="button"
                                                     onClick={() => handleAutoEmailChange(trigger.id as any, 'enabled', !formData.autoEmails?.[trigger.id as keyof typeof formData.autoEmails]?.enabled)}
-                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
-                                                        formData.autoEmails?.[trigger.id as keyof typeof formData.autoEmails]?.enabled ? "bg-brand-blue" : "bg-zinc-700"
-                                                    }`}
+                                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${formData.autoEmails?.[trigger.id as keyof typeof formData.autoEmails]?.enabled ? "bg-brand-blue" : "bg-zinc-700"
+                                                        }`}
                                                 >
                                                     <span
-                                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                                            formData.autoEmails?.[trigger.id as keyof typeof formData.autoEmails]?.enabled ? "translate-x-6" : "translate-x-1"
-                                                        }`}
+                                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${formData.autoEmails?.[trigger.id as keyof typeof formData.autoEmails]?.enabled ? "translate-x-6" : "translate-x-1"
+                                                            }`}
                                                     />
                                                 </button>
                                             </div>
