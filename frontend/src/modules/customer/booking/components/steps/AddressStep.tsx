@@ -8,10 +8,12 @@ import { useSettings } from "../../../../settings/hooks";
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import ServiceBoundary from "../map/ServiceBoundary";
 
 // Fix Leaflet marker icon issue
 import iconUrl from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
+import { isPointInServiceArea } from "../../lib/geo";
 
 const DefaultIcon = L.icon({
     iconUrl,
@@ -239,7 +241,10 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
     const imageCount = parkingImages.length;
     const needsMore = imageCount < MIN_IMAGES;
 
-    const isLocationInCity = !isRestricted || (booking.address.street || "").toLowerCase().includes(allowedCity.toLowerCase());
+    const isLocationInCity = !isRestricted || (
+        (booking.address.mapLocation && isPointInServiceArea(booking.address.mapLocation.lat, booking.address.mapLocation.lng)) ||
+        (booking.address.street || "").toLowerCase().includes(allowedCity.toLowerCase())
+    );
     const showRestrictionWarning = isRestricted && booking.address.street && !isLocationInCity;
 
     const whatsappLink = settings?.whatsappNumber 
@@ -412,6 +417,7 @@ export default function AddressStep({ booking, updateBooking }: StepProps) {
                             position={booking.address.mapLocation ? L.latLng(booking.address.mapLocation.lat, booking.address.mapLocation.lng) : null}
                             setPosition={handleMapClick}
                         />
+                        <ServiceBoundary fitBounds={!booking.address.mapLocation} />
                     </MapContainer>
                 </div>
                 <p className="text-xs text-zinc-500 font-medium">Tap anywhere on the map to manually drop the pin.</p>

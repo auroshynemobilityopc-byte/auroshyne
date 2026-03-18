@@ -7,6 +7,7 @@ import { useServices } from "../../services/hooks";
 import { MapContainer, TileLayer, Marker, useMapEvents } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
+import ServiceBoundary from "../../customer/booking/components/map/ServiceBoundary";
 import iconUrl from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
@@ -176,6 +177,7 @@ export const AddBookingSheet = ({ open, onClose, onSuccess }: AddBookingSheetPro
                                         position={formData.mapLocation ? L.latLng(formData.mapLocation.lat, formData.mapLocation.lng) : null}
                                         setPosition={(p) => handleChange("mapLocation", { lat: p.lat, lng: p.lng })}
                                     />
+                                    <ServiceBoundary fitBounds={!formData.mapLocation} />
                                 </MapContainer>
                             </div>
                             <p className="text-xs text-zinc-500">Click anywhere on the map to drop a pin.</p>
