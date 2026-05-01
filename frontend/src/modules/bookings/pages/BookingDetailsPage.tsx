@@ -30,6 +30,7 @@ import type {
 
 
 import { AssignTechnicianSheet } from "../components/AssignTechnicianSheet";
+import { EditServicesSheet } from "../components/EditServicesSheet";
 import { PaymentActions } from "../components/PaymentActions";
 import { StatusActions } from "../components/StatusActions";
 import { UpiTxnDrawer } from "../components/UpiTxnDrawer";
@@ -50,6 +51,7 @@ export const BookingDetailsPage = () => {
     const [statusOpen, setStatusOpen] = useState(false);
     const [upiOpen, setUpiOpen] = useState(false);
     const [emailOpen, setEmailOpen] = useState(false);
+    const [editServicesOpen, setEditServicesOpen] = useState(false);
 
     const [paymentStatus, setPaymentStatus] =
         useState<PaymentStatus>("UNPAID");
@@ -225,9 +227,19 @@ export const BookingDetailsPage = () => {
 
             {/* 🧾 BILL / PRICE BREAKDOWN */}
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-                <h2 className="text-sm font-medium text-zinc-400 mb-3">
-                    Price Details
-                </h2>
+                <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-sm font-medium text-zinc-400">
+                        Price Details
+                    </h2>
+                    {booking.status !== "COMPLETED" && booking.status !== "CANCELLED" && (
+                        <button
+                            onClick={() => setEditServicesOpen(true)}
+                            className="text-xs text-brand-blue hover:text-brand-accent transition-colors font-medium flex items-center gap-1"
+                        >
+                            ✏️ Edit Services
+                        </button>
+                    )}
+                </div>
 
                 <div className="flex flex-col gap-3 text-sm">
                     {booking.vehicles.map((v) => {
@@ -514,6 +526,16 @@ export const BookingDetailsPage = () => {
                 onClose={() => setEmailOpen(false)}
                 bookingId={booking._id}
                 userId={booking.userId}
+            />
+
+            <EditServicesSheet
+                open={editServicesOpen}
+                onClose={() => {
+                    setEditServicesOpen(false);
+                    refetch();
+                }}
+                bookingId={booking.bookingId}
+                initialVehicles={booking.vehicles}
             />
         </div>
     );

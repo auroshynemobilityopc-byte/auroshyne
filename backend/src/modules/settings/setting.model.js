@@ -54,6 +54,10 @@ const settingSchema = new mongoose.Schema(
             bookingCompleted: {
                 enabled:    { type: Boolean, default: false },
                 templateId: { type: mongoose.Schema.Types.ObjectId, ref: 'EmailTemplate', default: null }
+            },
+            forgotPassword: {
+                enabled:    { type: Boolean, default: false },
+                templateId: { type: mongoose.Schema.Types.ObjectId, ref: 'EmailTemplate', default: null }
             }
         }
     },

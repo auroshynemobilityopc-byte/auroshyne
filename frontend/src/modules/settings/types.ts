@@ -13,6 +13,7 @@ export interface AutoEmails {
     newBooking:        AutoEmailTrigger;
     newRegistration:   AutoEmailTrigger;
     bookingCompleted:  AutoEmailTrigger;
+    forgotPassword:    AutoEmailTrigger;
 }
 
 export interface Setting {
@@ -100,5 +101,6 @@ export interface UpdateSettingPayload {
         newBooking?:       { enabled?: boolean; templateId?: string | null };
         newRegistration?:  { enabled?: boolean; templateId?: string | null };
         bookingCompleted?: { enabled?: boolean; templateId?: string | null };
+        forgotPassword?:   { enabled?: boolean; templateId?: string | null };
     };
 }

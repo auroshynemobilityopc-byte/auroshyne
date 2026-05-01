@@ -82,6 +82,7 @@ export const SettingsPage: React.FC = () => {
             newBooking: { enabled: false, templateId: null },
             newRegistration: { enabled: false, templateId: null },
             bookingCompleted: { enabled: false, templateId: null },
+            forgotPassword: { enabled: false, templateId: null },
         },
     });
 
@@ -141,6 +142,10 @@ export const SettingsPage: React.FC = () => {
                     bookingCompleted: {
                         enabled: settingsData.data.autoEmails?.bookingCompleted?.enabled ?? false,
                         templateId: settingsData.data.autoEmails?.bookingCompleted?.templateId || null,
+                    },
+                    forgotPassword: {
+                        enabled: settingsData.data.autoEmails?.forgotPassword?.enabled ?? false,
+                        templateId: settingsData.data.autoEmails?.forgotPassword?.templateId || null,
                     },
                 },
             });
@@ -913,7 +918,8 @@ export const SettingsPage: React.FC = () => {
                                 {[
                                     { id: 'newBooking', label: 'New Booking', desc: 'Sent when a customer successfully creates a booking.' },
                                     { id: 'newRegistration', label: 'User Registration', desc: 'Sent when a new user registers on the platform.' },
-                                    { id: 'bookingCompleted', label: 'Booking Completed', desc: 'Sent when an admin marks a booking as completed.' }
+                                    { id: 'bookingCompleted', label: 'Booking Completed', desc: 'Sent when an admin marks a booking as completed.' },
+                                    { id: 'forgotPassword', label: 'Forgot Password', desc: 'Sent when a user requests a password reset.' }
                                 ].map((trigger) => (
                                     <div key={trigger.id} className="flex flex-col sm:flex-row sm:items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
                                         <div className="flex-1">

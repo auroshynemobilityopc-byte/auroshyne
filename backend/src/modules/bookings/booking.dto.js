@@ -60,3 +60,8 @@ exports.updatePaymentDTO = Joi.object({
         .required(),
     transactionId: Joi.string().allow(''),
 });
+
+exports.updateBookingServicesDTO = Joi.object({
+    bookingId: Joi.string().required(),
+    vehicles: Joi.array().items(vehicleDTO).min(1).required(),
+});

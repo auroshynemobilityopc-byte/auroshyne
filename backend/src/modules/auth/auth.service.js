@@ -136,3 +136,49 @@ exports.changePassword = async (
 
     return true;
 };
+
+exports.forgotPassword = async (email, origin) => {
+    const user = await User.findOne({ email, isActive: true });
+    if (!user) {
+        // To prevent email enumeration, we could just return true, but the prompt asks to send email.
+        // We throw a generic error or specific error based on preferences. Let's just return true to be safe,
+        // but if it's an internal tool maybe we want the error. I'll throw error for now.
+        throw new AppError('No active user found with this email', 404);
+    }
+
+    const crypto = require('crypto');
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    
+    user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    user.resetPasswordExpires = Date.now() + 15 * 60 * 1000; // 15 mins
+    await user.save();
+
+    const resetLink = `${origin}/reset-password?token=${resetToken}`;
+
+    mailService.sendAutoEmail('forgotPassword', { 
+        userId: user._id, 
+        system: { resetLink }
+    });
+
+    return true;
+};
+
+exports.resetPassword = async (token, newPassword) => {
+    const crypto = require('crypto');
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    const user = await User.findOne({
+        resetPasswordToken: hashedToken,
+        resetPasswordExpires: { $gt: Date.now() },
+    });
+
+    if (!user) throw new AppError('Token is invalid or has expired', 400);
+
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    user.refreshToken = null; // invalidate sessions
+    await user.save();
+
+    return true;
+};

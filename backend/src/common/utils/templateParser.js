@@ -13,10 +13,10 @@ const resolvePath = (obj, path) => {
  * Parses an email template, replacing placeholders with actual data
  * 
  * @param {String} templateBody The raw HTML or text template string
- * @param {Object} data Context data: { user, booking, discount }
+ * @param {Object} data Context data: { user, booking, discount, system }
  * @returns {String} Parsed template
  */
-exports.parseTemplatePlaceholders = (templateBody, { user = {}, booking = {}, discount = {} } = {}) => {
+exports.parseTemplatePlaceholders = (templateBody, { user = {}, booking = {}, discount = {}, system = {} } = {}) => {
     if (!templateBody) return '';
 
     // Create a safe map to expose explicitly allowed properties
@@ -50,6 +50,9 @@ exports.parseTemplatePlaceholders = (templateBody, { user = {}, booking = {}, di
             type: discount.type || '',
             value: discount.value || 0,
             description: discount.description || '',
+        },
+        system: {
+            resetLink: system.resetLink || '',
         }
     };
 
@@ -91,6 +94,8 @@ exports.getAvailablePlaceholders = () => {
         { key: '{{discount.code}}', description: 'Discount code text' },
         { key: '{{discount.type}}', description: 'Discount type (percentage/fixed)' },
         { key: '{{discount.value}}', description: 'Discount value' },
-        { key: '{{discount.description}}', description: 'Discount description' }
+        { key: '{{discount.description}}', description: 'Discount description' },
+
+        { key: '{{system.resetLink}}', description: 'Password reset link' }
     ];
 };

@@ -43,7 +43,7 @@ export const ServicesPage = () => {
                 setOpen(false);
                 setTimeout(() => window.location.reload(), 500);
             },
-            onError: () => toast.error("❌ Something went wrong. Please try again.")
+            onError: (err: any) => toast.error(err?.response?.data?.message || "❌ Something went wrong. Please try again.")
         });
     };
 
@@ -68,7 +68,7 @@ export const ServicesPage = () => {
                     setOpen(false);
                     setTimeout(() => window.location.reload(), 500);
                 },
-                onError: () => toast.error("❌ Something went wrong. Please try again.")
+                onError: (err: any) => toast.error(err?.response?.data?.message || "❌ Something went wrong. Please try again.")
             }
         );
     };

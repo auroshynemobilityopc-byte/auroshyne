@@ -6,6 +6,7 @@ const {
     assignTechnicianDTO,
     updateBookingStatusDTO,
     updatePaymentDTO,
+    updateBookingServicesDTO,
 } = require('./booking.dto');
 const { AppError } = require('../../common/utils/appError');
 
@@ -148,4 +149,13 @@ exports.deleteFailedBooking = asyncHandler(async (req, res) => {
         success: true,
         message: 'Abandoned booking removed seamlessly.'
     });
+});
+
+exports.updateBookingServices = asyncHandler(async (req, res) => {
+    const { error, value } = updateBookingServicesDTO.validate(req.body);
+    if (error) throw new AppError(error.details[0].message, 400);
+
+    const data = await bookingService.updateBookingServices(value.bookingId, value.vehicles);
+
+    res.status(200).json({ success: true, data });
 });

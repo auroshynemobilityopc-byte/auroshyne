@@ -6,6 +6,7 @@ import {
     updatePaymentApi,
     getBookingByIdApi,
     createBookingApi,
+    updateBookingServicesApi,
 } from "./api";
 import type { BookingListResponse } from "./types";
 import { getFromIndexedDB, saveToIndexedDB } from "../../lib/indexedDB";
@@ -123,6 +124,20 @@ export const useUpdatePayment = (onSuccess?: () => void) => {
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: ["bookings"] });
             qc.invalidateQueries({ queryKey: ["bookings-infinite"] });
+            qc.invalidateQueries({ queryKey: ["booking-details"] });
+            onSuccess?.();
+        },
+    });
+};
+
+export const useUpdateBookingServices = (onSuccess?: () => void) => {
+    const qc = useQueryClient();
+    return useMutation({
+        mutationFn: updateBookingServicesApi,
+        onSuccess: () => {
+            qc.invalidateQueries({ queryKey: ["bookings"] });
+            qc.invalidateQueries({ queryKey: ["bookings-infinite"] });
+            qc.invalidateQueries({ queryKey: ["booking-details"] });
             onSuccess?.();
         },
     });

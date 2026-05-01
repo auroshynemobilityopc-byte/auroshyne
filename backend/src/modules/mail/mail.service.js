@@ -68,7 +68,7 @@ exports.sendMail = async ({ to, subject, content }) => {
     }
 };
 
-exports.sendParsedMail = async ({ to, subject, content, templateId, userId, bookingId, discountId }) => {
+exports.sendParsedMail = async ({ to, subject, content, templateId, userId, bookingId, discountId, system }) => {
     let finalContent = content;
     let finalSubject = subject;
 
@@ -91,8 +91,8 @@ exports.sendParsedMail = async ({ to, subject, content, templateId, userId, book
     const user = resolvedUserId ? await User.findById(resolvedUserId) : null;
     const discount = discountId ? await Discount.findById(discountId) : null;
 
-    finalContent = parseTemplatePlaceholders(finalContent, { user: user || {}, booking: booking || {}, discount: discount || {} });
-    if (finalSubject) finalSubject = parseTemplatePlaceholders(finalSubject, { user: user || {}, booking: booking || {}, discount: discount || {} });
+    finalContent = parseTemplatePlaceholders(finalContent, { user: user || {}, booking: booking || {}, discount: discount || {}, system: system || {} });
+    if (finalSubject) finalSubject = parseTemplatePlaceholders(finalSubject, { user: user || {}, booking: booking || {}, discount: discount || {}, system: system || {} });
 
     // Resolve recipient: explicit `to` > user email > booking's customer contact (no email on booking model so skip)
     const recipient = to || (user && user.email) || null;
@@ -159,6 +159,7 @@ exports.sendAutoEmail = async (trigger, ctx = {}) => {
             templateId: String(triggerCfg.templateId),
             userId:     ctx.userId     ? String(ctx.userId)    : undefined,
             bookingId:  ctx.bookingId  ? String(ctx.bookingId) : undefined,
+            system:     ctx.system || {},
         });
     } catch (err) {
         // Never crash the caller — just log

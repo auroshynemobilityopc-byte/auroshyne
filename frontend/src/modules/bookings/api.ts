@@ -37,6 +37,13 @@ export const updatePaymentApi = async (data: {
     return api.patch("/payments", data);
 };
 
+export const updateBookingServicesApi = async (data: {
+    bookingId: string;
+    vehicles: any[];
+}) => {
+    return api.patch("/bookings/services", data);
+};
+
 export const getSlotBookingsApi = async (date: string, slot: string) => {
     const res = await api.get(`/bookings/slot/${date}/${slot}`);
     return res.data.data;

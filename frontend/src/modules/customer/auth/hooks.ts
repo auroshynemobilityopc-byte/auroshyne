@@ -1,5 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
-import { login, register } from "./api";
+import { login, register, forgotPassword, resetPassword } from "./api";
 import { setCustomerRefreshToken } from "../../../app/customer/customerStorage";
 import { useCustomerAuth } from "../../../app/customer/CustomerAuthContext";
 import toast from "react-hot-toast";
@@ -39,6 +39,30 @@ export const useRegister = () => {
         },
         onError: (error: any) => {
             toast.error(error.response?.data?.message || "Registration failed");
+        },
+    });
+};
+
+export const useForgotPassword = () => {
+    return useMutation({
+        mutationFn: forgotPassword,
+        onSuccess: (data) => {
+            toast.success(data.message || "Reset link sent to your email!");
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || "Failed to send reset link");
+        },
+    });
+};
+
+export const useResetPassword = () => {
+    return useMutation({
+        mutationFn: resetPassword,
+        onSuccess: (data) => {
+            toast.success(data.message || "Password successfully reset!");
+        },
+        onError: (error: any) => {
+            toast.error(error.response?.data?.message || "Failed to reset password");
         },
     });
 };

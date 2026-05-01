@@ -4,6 +4,8 @@ import { CustomerAuthGuard, CustomerGuestGuard } from "./guards/CustomerGuards";
 import HomePage from "../../modules/customer/home/pages/HomePage";
 import LoginPage from "../../modules/customer/auth/pages/LoginPage";
 import RegisterPage from "../../modules/customer/auth/pages/RegisterPage";
+import ForgotPasswordPage from "../../modules/customer/auth/pages/ForgotPasswordPage";
+import ResetPasswordPage from "../../modules/customer/auth/pages/ResetPasswordPage";
 import BookingPage from "../../modules/customer/booking/pages/BookingPage";
 import HistoryPage from "../../modules/customer/history/pages/HistoryPage";
 import ProfilePage from "../../modules/customer/profile/pages/ProfilePage";
@@ -33,6 +35,8 @@ export const customerRoutes = createBrowserRouter([
         children: [
             { path: "/login", element: <LoginPage /> },
             { path: "/register", element: <RegisterPage /> },
+            { path: "/forgot-password", element: <ForgotPasswordPage /> },
+            { path: "/reset-password", element: <ResetPasswordPage /> },
         ],
     },
 

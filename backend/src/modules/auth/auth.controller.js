@@ -3,7 +3,7 @@ const authService = require('./auth.service');
 const { loginDTO } = require('./login.dto');
 const { registerDTO } = require('./register.dto');
 const { AppError } = require('../../common/utils/appError');
-const { changePasswordDTO, refreshTokenDTO } = require('./auth.dto');
+const { changePasswordDTO, refreshTokenDTO, forgotPasswordDTO, resetPasswordDTO } = require('./auth.dto');
 const mailService = require('../mail/mail.service');
 const EmailTemplate = require('../emailTemplates/emailTemplate.model');
 
@@ -81,5 +81,30 @@ exports.changePassword = asyncHandler(async (req, res) => {
     res.status(200).json({
         success: true,
         message: 'Password changed successfully. Please login again.',
+    });
+});
+
+exports.forgotPassword = asyncHandler(async (req, res) => {
+    const { error, value } = forgotPasswordDTO.validate(req.body);
+    if (error) throw new AppError(error.details[0].message, 400);
+
+    const origin = req.headers.origin || 'http://localhost:5173'; // fallback for dev
+    await authService.forgotPassword(value.email, origin);
+
+    res.status(200).json({
+        success: true,
+        message: 'If the email exists, a password reset link has been sent.',
+    });
+});
+
+exports.resetPassword = asyncHandler(async (req, res) => {
+    const { error, value } = resetPasswordDTO.validate(req.body);
+    if (error) throw new AppError(error.details[0].message, 400);
+
+    await authService.resetPassword(value.token, value.newPassword);
+
+    res.status(200).json({
+        success: true,
+        message: 'Password has been successfully reset. You can now login.',
     });
 });

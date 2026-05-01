@@ -16,21 +16,20 @@ interface Props {
 export const EmailTemplateFormDrawer = ({ open, onClose, onSubmit, defaultValues }: Props) => {
     const { register, handleSubmit, reset } = useForm<CreateEmailTemplatePayload>();
     const [showPlaceholders, setShowPlaceholders] = useState(false);
-    const [activeCategory, setActiveCategory] = useState<"user" | "booking" | "discount" | null>(null);
+    const [activeCategory, setActiveCategory] = useState<"user" | "booking" | "system" | "discount" | null>(null);
 
     const userPlaceholders = ["{{user.name}}", "{{user.email}}", "{{user.mobile}}"];
     const bookingPlaceholders = ["{{booking.id}}", "{{booking.date}}", "{{booking.slot}}", "{{booking.status}}", "{{booking.totalAmount}}"];
+    const systemPlaceholders = ["{{system.resetLink}}"];
     // const discountPlaceholders = ["{{discount.code}}", "{{discount.value}}"];
 
     useEffect(() => {
         if (open) {
-            reset(
-                defaultValues || {
-                    name: "",
-                    subject: "",
-                    body: "",
-                }
-            );
+            reset({
+                name: defaultValues?.name || "",
+                subject: defaultValues?.subject || "",
+                body: defaultValues?.body || "",
+            });
         }
     }, [open, defaultValues, reset]);
 
@@ -88,13 +87,14 @@ export const EmailTemplateFormDrawer = ({ open, onClose, onSubmit, defaultValues
                                 <div className="flex gap-2">
                                     <Button type="button" variant={activeCategory === "user" ? "primary" : "secondary"} fullWidth={false} className="!py-1.5 focus:outline-none !px-3 text-xs" onClick={() => setActiveCategory(activeCategory === "user" ? null : "user")}>User Placeholders</Button>
                                     <Button type="button" variant={activeCategory === "booking" ? "primary" : "secondary"} fullWidth={false} className="!py-1.5 focus:outline-none !px-3 text-xs" onClick={() => setActiveCategory(activeCategory === "booking" ? null : "booking")}>Booking Placeholders</Button>
+                                    <Button type="button" variant={activeCategory === "system" ? "primary" : "secondary"} fullWidth={false} className="!py-1.5 focus:outline-none !px-3 text-xs" onClick={() => setActiveCategory(activeCategory === "system" ? null : "system")}>System Placeholders</Button>
                                     {/* <Button type="button" variant={activeCategory === "discount" ? "primary" : "secondary"} fullWidth={false} className="!py-1.5 focus:outline-none !px-3 text-xs" onClick={() => setActiveCategory(activeCategory === "discount" ? null : "discount")}>Discount Placeholders</Button> */}
                                 </div>
 
                                 {activeCategory && (
                                     <div className="pt-2">
                                         <div className="flex flex-wrap gap-2 text-[11px] text-zinc-300">
-                                            {(activeCategory === "user" ? userPlaceholders : bookingPlaceholders).map((ph) => (
+                                            {(activeCategory === "user" ? userPlaceholders : activeCategory === "booking" ? bookingPlaceholders : systemPlaceholders).map((ph) => (
                                                 <span key={ph} className="bg-zinc-800 px-2 py-1.5 rounded bg-black/40 border border-white/10 cursor-pointer hover:bg-zinc-700 hover:text-white transition-colors" onClick={() => navigator.clipboard.writeText(ph)}>{ph}</span>
                                             ))}
                                         </div>

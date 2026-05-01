@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "react-hot-toast";
 import { Drawer } from "../../../components/shared/Drawer";
 import { Button } from "../../../components/shared/Button";
 import { useCreateBooking } from "../hooks";
@@ -113,13 +114,27 @@ export const AddBookingSheet = ({ open, onClose, onSuccess }: AddBookingSheetPro
 
         createMutation.mutate(payload, {
             onSuccess: () => {
+                toast.success("✅ Booking created successfully");
                 onClose();
                 onSuccess?.();
             },
             onError: (err: any) => {
-                alert(err?.response?.data?.message || "Error creating booking");
+                toast.error(err?.response?.data?.message || "❌ Error creating booking");
             }
         });
+    };
+
+    const handleMapClick = async (p: L.LatLng) => {
+        handleChange("mapLocation", { lat: p.lat, lng: p.lng });
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${p.lat}&lon=${p.lng}`);
+            const data = await res.json();
+            if (data && data.display_name) {
+                handleChange("customerAddress", data.display_name);
+            }
+        } catch (e) {
+            console.error("Reverse geocoding failed", e);
+        }
     };
 
     const isLocationInCity = !isRestricted || (formData.customerAddress || "").toLowerCase().includes(allowedCity.toLowerCase());
@@ -175,7 +190,7 @@ export const AddBookingSheet = ({ open, onClose, onSuccess }: AddBookingSheetPro
                                     />
                                     <LocationMarker
                                         position={formData.mapLocation ? L.latLng(formData.mapLocation.lat, formData.mapLocation.lng) : null}
-                                        setPosition={(p) => handleChange("mapLocation", { lat: p.lat, lng: p.lng })}
+                                        setPosition={handleMapClick}
                                     />
                                     <ServiceBoundary fitBounds={!formData.mapLocation} />
                                 </MapContainer>

@@ -378,6 +378,75 @@ exports.updateBookingStatus = async ({ bookingId, status }) => {
     return booking;
 };
 
+/* ---------------- UPDATE SERVICES ---------------- */
+
+exports.updateBookingServices = async (bookingId, vehiclesParams) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const booking = await Booking.findOne({ bookingId }).session(session);
+        if (!booking) throw new AppError('Booking not found', 404);
+
+        if (booking.status === 'COMPLETED' || booking.status === 'CANCELLED') {
+            throw new AppError(`Cannot update services for a ${booking.status.toLowerCase()} booking`, 400);
+        }
+
+        const setting = await Setting.findOne().session(session).lean();
+        const taxPercentage = setting?.taxPercentage || 0;
+
+        let totalAmount = 0;
+        const vehicles = [];
+
+        for (const v of vehiclesParams) {
+            const price = await calculateVehiclePrice(v);
+            totalAmount += price;
+            vehicles.push({ ...v, price });
+        }
+
+        let discount = calculateDiscount(totalAmount, vehicles.length, setting);
+
+        // If booking already had a discount code applied, we might need to recalculate it
+        if (booking.discountCode) {
+            const discountObj = await discountService.validateDiscountCode(booking.discountCode, totalAmount, booking.userId);
+            let codeDiscount = discountObj.type === 'percentage'
+                ? totalAmount * (discountObj.value / 100)
+                : discountObj.value;
+
+            if (discountObj.maxDiscount && codeDiscount > discountObj.maxDiscount) {
+                codeDiscount = discountObj.maxDiscount;
+            }
+
+            if (codeDiscount > discount) discount = codeDiscount;
+        }
+
+        let finalAmount = totalAmount - discount;
+        const tax = finalAmount * (taxPercentage / 100);
+        finalAmount = finalAmount + tax;
+
+        if (finalAmount < 0) {
+            throw new Error("Invalid booking amount. The final amount cannot be negative.");
+        }
+
+        booking.vehicles = vehicles;
+        booking.totalAmount = finalAmount;
+        booking.discount = discount;
+        booking.tax = tax;
+        booking.isBulk = vehicles.length > 1;
+
+        await booking.save({ session });
+
+        await session.commitTransaction();
+        session.endSession();
+
+        return booking;
+    } catch (err) {
+        await session.abortTransaction();
+        session.endSession();
+        throw err;
+    }
+};
+
 /* ---------------- UPDATE PAYMENT ---------------- */
 
 exports.updatePayment = async ({ bookingId, method, status, transactionId }) => {

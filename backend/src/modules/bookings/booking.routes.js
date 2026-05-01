@@ -46,6 +46,12 @@ router.patch(
 
 router.patch('/payment', allowRoles(ADMIN), bookingController.updatePayment);
 
+router.patch(
+    '/services',
+    allowRoles(ADMIN),
+    bookingController.updateBookingServices
+);
+
 // Customer self-service
 router.patch('/my/cancel', allowRoles(CUSTOMER), bookingLimiter, bookingController.cancelBooking);
 router.patch('/my/refund', allowRoles(CUSTOMER), bookingLimiter, bookingController.requestRefund);
