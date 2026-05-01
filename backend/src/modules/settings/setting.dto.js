@@ -53,6 +53,10 @@ exports.updateSettingDTO = Joi.object({
         bookingCompleted: Joi.object({
             enabled: Joi.boolean(),
             templateId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).allow('', null)
+        }),
+        forgotPassword: Joi.object({
+            enabled: Joi.boolean(),
+            templateId: Joi.string().regex(/^[0-9a-fA-F]{24}$/).allow('', null)
         })
     })
 });
